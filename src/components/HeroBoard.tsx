@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { COLOR_INITIALS, GRID_COLOR, NUM_ROWS, PENALTIES, gridCol, scorePlacement } from '../engine';
 
 const FILL = [
@@ -29,6 +30,7 @@ const FILL = [
 ];
 
 const CELL = 'h-[var(--hero-cell)] w-[var(--hero-cell)] rounded-[3px] border';
+const TARGET_BORDER = ['border-blue-400', 'border-amber-300', 'border-red-400', 'border-green-400', 'border-stone-200'];
 const B = 0, Y = 1, R = 2, K = 3, W = 4;
 
 const FACTORIES: readonly (readonly number[])[] = [
@@ -122,11 +124,13 @@ function Empty({
   ghost = false,
   label,
   id,
+  targetColor,
 }: {
   faint?: boolean;
   ghost?: boolean;
   label?: string;
   id?: string;
+  targetColor?: number;
 }) {
   const skin = ghost
     ? 'border-transparent'
@@ -137,7 +141,7 @@ function Empty({
     <div
       data-hero-id={id}
       data-label={label}
-      className={`${CELL} ${skin} grid place-items-center text-[9px] font-medium tabular-nums text-neutral-500 before:content-[attr(data-label)] sm:text-[10px]`}
+      className={`${CELL} ${targetColor === undefined ? skin : `${TARGET_BORDER[targetColor]} bg-transparent`} grid place-items-center text-[9px] font-medium tabular-nums text-neutral-500 before:content-[attr(data-label)] sm:text-[10px]`}
     />
   );
 }
@@ -230,6 +234,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
   const [floor, setFloor] = useState<number[]>(emptyFloor);
   const [wall, setWall] = useState<boolean[][]>(seededWall);
   const [score, setScore] = useState(OPENING_SCORE);
+  const [target, setTarget] = useState<{ row: number; col: number; color: number } | null>(null);
 
   // Pause both token flights and score effects without resetting the preview.
   useEffect(() => {
@@ -264,6 +269,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
     if (still) return;
     let cancelled = false;
     const inFlight = new Set<HTMLElement>();
+    const scoreAnimations = new Set<Animation>();
     const waitWhilePaused = async () => {
       while (pausedRef.current && !cancelled) await sleep(100);
     };
@@ -287,11 +293,11 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
      * for neighbouring cells from reading as one tile teleporting twice.
      */
     const flyTo = (color: number, from: string, to: string, ms: number, delay = 0) =>
-      new Promise<void>((resolve) => {
+      new Promise<() => void>((resolve) => {
         const root = rootRef.current;
         const a = rect(from);
         const b = rect(to);
-        if (!root || !a || !b) return resolve();
+        if (!root || !a || !b) return resolve(() => {});
         const node = document.createElement('div');
         node.dataset.initial = COLOR_INITIALS[color];
         node.className = tileClass(color, 'absolute z-10 shadow-lg shadow-black/50');
@@ -313,10 +319,18 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
           ],
           { duration: ms, delay, easing: 'cubic-bezier(0.34, 0.8, 0.3, 1)', fill: 'both' },
         );
+        let landed = false;
         const land = () => {
-          inFlight.delete(node);
-          node.remove();
-          resolve();
+          if (landed) return;
+          landed = true;
+
+          // The caller commits the destination and then removes this overlay
+          // in the same frame. That avoids both an empty frame and a bright
+          // double-tile frame at the landing point.
+          resolve(() => {
+            inFlight.delete(node);
+            node.remove();
+          });
         };
         anim.onfinish = land;
         // A backgrounded tab never fires `onfinish`; without this the whole
@@ -352,6 +366,26 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
       };
       anim.onfinish = gone;
       setTimeout(gone, 1300);
+    };
+
+    // Only contiguous tiles in the scored row and column contribute points.
+    const highlightScore = (grid: boolean[][], row: number, col: number) => {
+      const cells = [[row, col]];
+      for (const [dr, dc] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+        for (let r = row + dr, c = col + dc; grid[r]?.[c]; r += dr, c += dc) {
+          cells.push([r, c]);
+        }
+      }
+      for (const [r, c] of cells) {
+        const node = el(`wall-${r}-${c}`);
+        if (!node) continue;
+        const animation = node.animate(
+          [{ filter: 'brightness(1)' }, { filter: 'brightness(1.4)', offset: 0.2 }, { filter: 'brightness(1)' }],
+          { duration: SCORE_PAUSE_MS, easing: 'ease-out' },
+        );
+        scoreAnimations.add(animation);
+        animation.onfinish = () => scoreAnimations.delete(animation);
+      }
     };
 
     /** Tiles that are discarded rather than moved still leave visibly. */
@@ -401,7 +435,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
 
       // Every tile of the color leaves at once: the move is one block, not a
       // trickle. The stagger is only enough to tell the tiles apart in flight.
-      const flights: Promise<void>[] = [];
+      const flights: Promise<() => void>[] = [];
       const landings: { kind: 'stage' | 'floor'; index: number; color: number }[] = [];
       taken.forEach((slot, n) => {
         if (n < room) {
@@ -435,16 +469,19 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
         setFactories((f) => f.map((row, i) => (i === turn.factory ? row.map(() => -1) : row)));
       }
 
-      await Promise.all(flights);
+      const removeFlights = await Promise.all(flights);
       if (cancelled) return;
 
       for (const l of landings) {
         if (l.kind === 'stage') stage[turn.row] = { color: l.color, filled: stage[turn.row].filled + 1 };
         else if (l.kind === 'floor') hold[l.index] = l.color;
       }
-      setStaging([...stage]);
-      setFloor([...hold]);
-      setCenter([...plan.next]);
+      flushSync(() => {
+        setStaging([...stage]);
+        setFloor([...hold]);
+        setCenter([...plan.next]);
+      });
+      removeFlights.forEach((remove) => remove());
     }
 
     async function run() {
@@ -488,17 +525,26 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
           if (stage[row].filled !== row + 1) continue;
           const color = stage[row].color;
           const col = gridCol(row, color);
+          setTarget({ row, col, color });
+          await sleep(500);
+          await waitWhilePaused();
+          if (cancelled) return;
           const spare = Array.from({ length: row }, (_, i) => `stage-${row}-${i + 1}`);
           const flight = flyTo(color, `stage-${row}-0`, `wall-${row}-${col}`, SETTLE_MS);
-          await Promise.all([flight, fadeOut(spare)]);
+          const [removeFlight] = await Promise.all([flight, fadeOut(spare)]);
           if (cancelled) return;
           stage[row] = { color: -1, filled: 0 };
           grid[row][col] = true;
-          setStaging([...stage]);
-          setWall(grid.map((r) => [...r]));
           const points = scorePlacement(grid, row, col)[0];
           total += points;
-          setScore(total);
+          flushSync(() => {
+            setStaging([...stage]);
+            setWall(grid.map((r) => [...r]));
+            setScore(total);
+            setTarget(null);
+          });
+          removeFlight();
+          highlightScore(grid, row, col);
           popScore(`+${points}`, `wall-${row}-${col}`, true);
 
           await sleep(SCORE_PAUSE_MS);
@@ -526,6 +572,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
     run();
     return () => {
       cancelled = true;
+      for (const animation of scoreAnimations) animation.cancel();
       for (const node of inFlight) node.remove();
     };
   }, [still]);
@@ -590,7 +637,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
                 wall[row][col] ? (
                   <Tile key={col} color={color} id={`wall-${row}-${col}`} />
                 ) : (
-                  <Empty key={col} faint id={`wall-${row}-${col}`} />
+                  <Empty key={col} faint id={`wall-${row}-${col}`} targetColor={target?.row === row && target.col === col ? target.color : undefined} />
                 ),
               )}
             </div>
