@@ -1,5 +1,5 @@
 /**
- * The scripted lesson: one full round of Quadro, move by move.
+ * The scripted lesson: one full round of NODRA, move by move.
  *
  * The whole lesson is deterministic. Seed 7 deals the opening below, the
  * opponent is the greedy agent (synchronous, seeded, <5ms), and the learner's

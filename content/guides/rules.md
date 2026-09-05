@@ -1,10 +1,10 @@
 ---
-title: MirrorLink rules — how to play
-description: The complete rules of MirrorLink in one page: drafting tokens from attention nodes and the buffer, context lines, hallucination overload, how memory settles, and when the game ends.
+title: NODRA rules — how to play
+description: The complete rules of NODRA in one page: drafting tokens from attention nodes and the buffer, context lines, hallucination overload, how memory settles, and when the game ends.
 updated: 2026-09-05
 ---
 
-MirrorLink is a game of complete information. Five attention nodes, a central buffer, and two consciousness boards — everything you can see is everything there is. There are no hidden hands and no hidden bag order.
+NODRA is a game of complete information. Five attention nodes, a central buffer, and two consciousness boards — everything you can see is everything there is. There are no hidden hands and no hidden bag order.
 
 ## The interface
 

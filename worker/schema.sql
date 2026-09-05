@@ -1,6 +1,6 @@
--- Quadro Daily leaderboard storage (BUILD-SPEC §12.1).
+-- NODRA Daily leaderboard storage (BUILD-SPEC §12.1).
 --
---   npx wrangler d1 execute quadro --remote --file worker/schema.sql
+--   npx wrangler d1 execute nodra --remote --file worker/schema.sql
 
 CREATE TABLE IF NOT EXISTS scores (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

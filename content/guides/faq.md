@@ -1,13 +1,13 @@
 ---
-title: MirrorLink FAQ
+title: NODRA FAQ
 description: Answers to common questions — cost, sign-in, offline play, daily reset, how the leaderboard ranks, and game mechanics.
 updated: 2026-09-05
 faq: true
 ---
 
-## Is MirrorLink free?
+## Is NODRA free?
 
-Yes. MirrorLink is completely free to play. There is no paid tier, no ads, and no in-game purchase.
+Yes. NODRA is completely free to play. There is no paid tier, no ads, and no in-game purchase.
 
 ## Do I need an account?
 
@@ -31,15 +31,15 @@ Because the AI architectures are fundamentally different. A margin against Extre
 
 ## Can I play offline?
 
-Yes. Practice runs entirely in your browser — the AI engine included — so once the page has loaded it keeps working with no network. MirrorLink is installable as a PWA app on mobile and desktop. The Daily needs a network connection to fetch the seed and record scores.
+Yes. Practice runs entirely in your browser — the AI engine included — so once the page has loaded it keeps working with no network. NODRA is installable as a PWA app on mobile and desktop. The Daily needs a network connection to fetch the seed and record scores.
 
 ## Is this the board game Azul?
 
-No. MirrorLink is an original browser-based strategic duel inspired by classic drafting mechanics and reimagined through the narrative of AI consciousness and memory. Read more in [Games like Azul](/guide/games-like-azul).
+No. NODRA is an original browser-based strategic duel inspired by classic drafting mechanics and reimagined through the narrative of AI consciousness and memory. Read more in [Games like Azul](/guide/games-like-azul).
 
 ## Does the AI cheat?
 
-No. It sees exactly what you see. MirrorLink is a game of complete information — no hidden hands, no hidden bag order — so there is nothing for either side to hide. The AI's strength comes purely from algorithmic search depth and tree simulations.
+No. It sees exactly what you see. NODRA is a game of complete information — no hidden hands, no hidden bag order — so there is nothing for either side to hide. The AI's strength comes purely from algorithmic search depth and tree simulations.
 
 ## How do I delete my scores?
 

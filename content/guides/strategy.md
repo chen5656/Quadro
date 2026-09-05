@@ -1,5 +1,5 @@
 ---
-title: MirrorLink strategy — how to win by a wider margin
+title: NODRA strategy — how to win by a wider margin
 description: The decisions that separate a 20-point game from a 60-point one: memory clustering, pricing hallucinations, cognitive interception, buffer control, and endgame columns.
 updated: 2026-09-05
 ---

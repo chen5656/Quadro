@@ -1,5 +1,5 @@
 ---
-title: How scoring works in MirrorLink
+title: How scoring works in NODRA
 description: Why a token etched next to your existing memory nodes is worth several times one placed in empty space, what hallucinations cost, and what end-game bonuses are worth.
 updated: 2026-09-05
 ---

@@ -7,10 +7,10 @@
  */
 
 export const ORIGIN = 'https://acgame.win';
-export const SITE_NAME = 'MirrorLink';
+export const SITE_NAME = 'NODRA';
 export const OG_IMAGE = '/og.png';
 export const OG_IMAGE_ALT =
-  'MirrorLink — a human vs AI consciousness & memory duel.';
+  'NODRA — A game of patterns, memory, and control.';
 export const TWITTER_CARD = 'summary_large_image';
 
 /**
@@ -22,11 +22,11 @@ export const TWITTER_CARD = 'summary_large_image';
 export const APP_ROUTES = [
   {
     path: '/',
-    title: 'MirrorLink — human mind vs AI duel over memory and consciousness',
+    title: 'NODRA — A game of patterns, memory, and control',
     description:
       'A strategic duel between human consciousness and a synthetic replica. Extract tokens from attention nodes, anchor your memory, resist hallucination. Free, no sign-in, works offline.',
     prose: {
-      h1: 'MirrorLink',
+      h1: 'NODRA',
       lead:
         'A fast-paced consciousness duel against an AI opponent. Extract memory tokens from shared attention nodes, align them in your context lines, and etch them into permanent memory — before the synthetic replica steals your identity. Free, no download, plays in your browser. One deal a day, the same for everyone, scored on your winning margin.',
       links: [
@@ -38,16 +38,16 @@ export const APP_ROUTES = [
         ['/guide/rules', 'The rules'],
         ['/guide/scoring', 'How scoring works'],
         ['/guide/strategy', 'Strategy guide'],
-        ['/guide/games-like-azul', 'Games like Azul — how MirrorLink compares'],
+        ['/guide/games-like-azul', 'Games like Azul — how NODRA compares'],
         ['/guide', 'All the lore, rules, scoring and strategy guides'],
       ],
     },
   },
   {
     path: '/daily',
-    title: 'Daily Challenge — MirrorLink',
+    title: 'Daily Challenge — NODRA',
     description:
-      "Today's MirrorLink deal, identical for every player. Pick your opponent difficulty, maximize your score margin, and take the lead on the daily board.",
+      "Today's NODRA deal, identical for every player. Pick your opponent difficulty, maximize your score margin, and take the lead on the daily board.",
     prose: {
       h1: 'Daily Challenge',
       lead:
@@ -60,9 +60,9 @@ export const APP_ROUTES = [
   },
   {
     path: '/practice',
-    title: 'Practice — MirrorLink',
+    title: 'Practice — NODRA',
     description:
-      'Play MirrorLink untimed against any of six AI opponents, on any deal. Nothing is recorded, and it works offline.',
+      'Play NODRA untimed against any of six AI opponents, on any deal. Nothing is recorded, and it works offline.',
     prose: {
       h1: 'Practice',
       lead:
@@ -76,7 +76,7 @@ export const APP_ROUTES = [
   },
   {
     path: '/tutorial',
-    title: 'Learn to play MirrorLink — a guided round',
+    title: 'Learn to play NODRA — a guided round',
     description:
       'A two-minute scripted round: attention drafting, context lines, hallucination overload, and how permanent memory scores. No sign-in, nothing recorded.',
     prose: {
@@ -92,9 +92,9 @@ export const APP_ROUTES = [
   },
   {
     path: '/leaderboard',
-    title: 'Leaderboard — MirrorLink Daily',
+    title: 'Leaderboard — NODRA Daily',
     description:
-      "Today's MirrorLink leaderboard, with a separate board for each of the six AI opponents. Ranked by score margin, then by time.",
+      "Today's NODRA leaderboard, with a separate board for each of the six AI opponents. Ranked by score margin, then by time.",
     prose: {
       h1: 'Leaderboard',
       lead:
@@ -102,6 +102,36 @@ export const APP_ROUTES = [
       links: [
         ['/daily', "Play today's deal"],
         ['/guide/difficulty', 'How the six opponents compare'],
+      ],
+    },
+  },
+  {
+    path: '/replay',
+    title: 'Replay — NODRA',
+    description:
+      'Watch a turn-by-turn replay of a NODRA match.',
+    prose: {
+      h1: 'Match Replay',
+      lead:
+        'Watch a full turn-by-turn reconstructed replay of a completed NODRA consciousness duel.',
+      links: [
+        ['/daily', "Play today's daily puzzle"],
+        ['/practice', 'Practice against AI'],
+      ],
+    },
+  },
+  {
+    path: '/history',
+    title: 'Match History — NODRA',
+    description:
+      'View your past daily challenges and watch game replays.',
+    prose: {
+      h1: 'Match History',
+      lead:
+        'Your match history and recorded replays for the NODRA Daily Challenge.',
+      links: [
+        ['/daily', "Play today's daily puzzle"],
+        ['/leaderboard', "See today's leaderboard"],
       ],
     },
   },

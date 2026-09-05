@@ -1,4 +1,4 @@
-# Quadro
+# NODRA
 
 A browser-native, full-stack implementation of a tile-drafting board game, inspired by **Azul**. Built with TypeScript, React, Vite, and Cloudflare Workers + D1.
 
@@ -117,7 +117,7 @@ The app runs on Cloudflare Pages and Cloudflare Workers.
 
 ```bash
 npm run build
-npx wrangler pages deploy dist --project-name quadro --branch main
+npx wrangler pages deploy dist --project-name nodra --branch release
 npx wrangler deploy
 ```
 
@@ -126,7 +126,7 @@ The Worker verifies Clerk sessions against the instance JWKS public keys, so no 
 Database migrations live in `worker/migrations/` and are applied with:
 
 ```bash
-npx wrangler d1 execute quadro --remote --file worker/migrations/002_level_rename.sql
+npx wrangler d1 execute nodra --remote --file worker/migrations/002_level_rename.sql
 ```
 
 ---
@@ -161,7 +161,7 @@ card; regenerate it with any headless browser at 1200×630.
 
 ## Attribution & Disclaimer
 
-Quadro is an independent, open-source implementation inspired by the tile-drafting mechanics of the board game **Azul**, designed by Michael Kiesling.
+NODRA is an independent, open-source implementation inspired by the tile-drafting mechanics of the board game **Azul**, designed by Michael Kiesling.
 
 This project is not affiliated with, endorsed by, or sponsored by Plan B Games, Next Move Games, or Asmodee. "Azul" and all related trademarks belong to their respective owners; they are used here only to describe the mechanics this project draws on. No original artwork, text, or components from the published game are reproduced.
 

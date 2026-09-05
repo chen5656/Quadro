@@ -1,6 +1,6 @@
 -- Adds the opponent agent to `scores` and makes the board per-agent.
 --
---   npx wrangler d1 execute quadro --remote --file worker/migrations/001_ai_level.sql
+--   npx wrangler d1 execute nodra --remote --file worker/migrations/001_ai_level.sql
 --
 -- SQLite cannot alter a UNIQUE constraint in place, so the table is rebuilt.
 -- Existing rows predate the per-agent board and were all played against the

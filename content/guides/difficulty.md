@@ -1,10 +1,10 @@
 ---
-title: The six MirrorLink AI opponents, explained
+title: The six NODRA AI opponents, explained
 description: What Easy, Medium, Hard, Expert, Master and Extreme actually do — the neural algorithm behind each, measured win rates, and which leaderboard is worth chasing.
 updated: 2026-09-05
 ---
 
-MirrorLink ships six synthetic AI adversaries built from three algorithmic paradigms. They represent the progressive awakening of the synthetic replica's cognitive architecture — from erratic heuristic mimicry to deep Monte Carlo foresight. All six run locally in your browser with zero network latency, which is why [Practice](/practice) works offline.
+NODRA ships six synthetic AI adversaries built from three algorithmic paradigms. They represent the progressive awakening of the synthetic replica's cognitive architecture — from erratic heuristic mimicry to deep Monte Carlo foresight. All six run locally in your browser with zero network latency, which is why [Practice](/practice) works offline.
 
 ## The cognitive ladder
 

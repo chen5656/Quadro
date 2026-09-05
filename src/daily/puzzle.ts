@@ -9,7 +9,7 @@
 import { QuadroGame, fnv1a32 } from '../engine';
 
 /** Bumping this regenerates the whole deal set without colliding with posted times. */
-export const PUZZLE_NAMESPACE = 'quadro-daily-v1:';
+export const PUZZLE_NAMESPACE = 'nodra-daily-v1:';
 
 export const DAILY_TIME_ZONE = 'America/New_York';
 
@@ -40,7 +40,7 @@ export function puzzleIdFor(at: Date = new Date()): string {
   return DATE_FORMAT.format(at);
 }
 
-/** `seed = fnv1a32("quadro-daily-v1:" + puzzle_id)` (BR-002). */
+/** `seed = fnv1a32("nodra-daily-v1:" + puzzle_id)` (BR-002). */
 export function seedForPuzzle(puzzleId: string): number {
   return fnv1a32(PUZZLE_NAMESPACE + puzzleId);
 }

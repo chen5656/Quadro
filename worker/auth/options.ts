@@ -92,7 +92,7 @@ export function authOptions(
   const origin = env.ALLOWED_ORIGIN ?? 'https://acgame.win';
 
   return {
-    appName: 'Quadro',
+    appName: 'NODRA',
     baseURL: origin,
     basePath: '/api/auth',
     secret: env.BETTER_AUTH_SECRET,

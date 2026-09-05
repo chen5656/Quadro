@@ -14,6 +14,8 @@
   gap: 48px;
   padding: 64px 0 72px;
 }
+.home-kicker { margin: 0 0 18px; color: #e5e5e5; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.home-kicker span { color: var(--home-muted); font-weight: 500; letter-spacing: 0.08em; }
 .home-intro h1 {
   margin: 0;
   font-size: clamp(40px, 4.4vw, 60px);

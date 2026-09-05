@@ -19,6 +19,8 @@ export interface GameResultCardProps {
   ranked?: boolean;
   onPlayAgain: () => void;
   onWatchReplay?: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   onSwitchToRanked?: () => void;
   onRetrySubmit?: () => void;
   onDiscardSubmit?: () => void;
@@ -36,6 +38,8 @@ export function GameResultCard({
   ranked = isRankedLevel(aiLevel),
   onPlayAgain,
   onWatchReplay,
+  onBack,
+  backLabel = 'Back to Home',
   onSwitchToRanked,
   onRetrySubmit,
   onOpenSignIn,
@@ -44,8 +48,20 @@ export function GameResultCard({
   const opponentName = LEVEL_LABELS[aiLevel] ?? aiLevel;
   const timeFormatted = formatElapsed(elapsedMs);
 
-  const handleShareClick = () => {
-    // Placeholder action for share
+  const handleShareClick = async () => {
+    const shareData = {
+      title: 'NODRA — Daily Challenge',
+      text: `I scored ${humanScore}–${opponentScore} vs ${opponentName} in NODRA!`,
+      url: window.location.href,
+    };
+    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // Share dismissed or failed, fallback to copy
+      }
+    }
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       void navigator.clipboard.writeText(window.location.href);
       setCopied(true);
@@ -315,6 +331,29 @@ export function GameResultCard({
             >
               Play again
             </button>
+
+            {/* Back button */}
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex w-full lg:w-44 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-950/60 px-4 py-2 text-sm font-medium text-neutral-400 transition hover:border-neutral-700 hover:bg-neutral-900 hover:text-neutral-200 active:scale-[0.98]"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-3.5 w-3.5 stroke-current"
+                  fill="none"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                <span>{backLabel}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

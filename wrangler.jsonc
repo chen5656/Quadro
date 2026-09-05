@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "quadro-api",
+  "name": "nodra-api",
   "main": "worker/index.ts",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["nodejs_compat"],
@@ -13,8 +13,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "quadro",
-      "database_id": "50ec5486-b419-46da-89d6-0f99f52ce947"
+      "database_name": "nodra",
+      "database_id": "164ed441-a912-45da-a168-376f23737aba"
     }
   ],
 
@@ -28,7 +28,7 @@
   "r2_buckets": [
     {
       "binding": "AVATARS",
-      "bucket_name": "quadro-avatars"
+      "bucket_name": "nodra-avatars"
     }
   ],
 

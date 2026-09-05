@@ -1,5 +1,5 @@
 /**
- * Rules of Quadro: legal move generation, move application, round settling.
+ * Rules of NODRA: legal move generation, move application, round settling.
  *
  * Port of `backend/engine/rules.py`. This is the layer the AI search calls
  * directly: `applyAction` returns an `Undo` record so a search can walk the tree

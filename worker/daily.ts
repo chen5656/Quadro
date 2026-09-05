@@ -8,7 +8,7 @@
 import { fnv1a32 } from '../src/engine/rng';
 
 export const DAILY_TIME_ZONE = 'America/New_York';
-export const PUZZLE_NAMESPACE = 'quadro-daily-v1:';
+export const PUZZLE_NAMESPACE = 'nodra-daily-v1:';
 
 const DATE_FORMAT = new Intl.DateTimeFormat('en-CA', {
   timeZone: DAILY_TIME_ZONE,

@@ -1,7 +1,7 @@
 -- Renames the opponent levels to the six-tier difficulty ladder and drops the
 -- retired `random` opponent.
 --
---   npx wrangler d1 execute quadro --remote --file worker/migrations/002_level_rename.sql
+--   npx wrangler d1 execute nodra --remote --file worker/migrations/002_level_rename.sql
 --
 --   mcts    -> extreme      greedy -> medium
 --   minimax -> master       random -> (deleted)

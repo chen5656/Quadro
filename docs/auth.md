@@ -49,7 +49,7 @@ node scripts/gen-auth-schema.mjs
 Then apply it:
 
 ```bash
-npx wrangler d1 execute quadro --remote --file worker/migrations/004_auth.sql
+npx wrangler d1 execute nodra --remote --file worker/migrations/004_auth.sql
 ```
 
 ## Configuration

@@ -1,5 +1,5 @@
 /**
- * A small, self-playing Quadro board for the home page hero.
+ * A small, self-playing NODRA board for the home page hero.
  *
  * Deliberately not the real `PlayerBoard`: that one needs a live `Session`, and
  * the hero must render before any game code loads. The wall pattern and the

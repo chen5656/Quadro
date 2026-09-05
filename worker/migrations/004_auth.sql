@@ -4,7 +4,7 @@
 -- fields our config adds: `nickname` for the leaderboard name and
 -- `isAnonymous` from the anonymous plugin.
 --
---   npx wrangler d1 execute quadro --remote --file worker/migrations/004_auth.sql
+--   npx wrangler d1 execute nodra --remote --file worker/migrations/004_auth.sql
 
 create table "user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" integer not null, "image" text, "createdAt" date not null, "updatedAt" date not null, "isAnonymous" integer, "nickname" text);
 

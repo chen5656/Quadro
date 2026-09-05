@@ -125,6 +125,7 @@ function DailyAttempt({
 }) {
   const identity = useIdentity();
   const submission = useSubmission(identity);
+  const { navigate } = useRouter();
   const [boardRefresh, setBoardRefresh] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [totalEntries, setTotalEntries] = useState<number | null>(null);
@@ -258,6 +259,8 @@ function DailyAttempt({
           submissionState={submission.state}
           ranked={isRanked(level)}
           onPlayAgain={onPlayAgain}
+          onBack={() => navigate('/')}
+          backLabel="Back to Home"
           onWatchReplay={() => {
             try {
               const replay = replayOf(session.game, { aiLevel: level, humanSeat: HUMAN_SEAT, puzzleId });

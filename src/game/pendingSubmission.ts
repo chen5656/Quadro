@@ -12,7 +12,7 @@
 
 import type { ScoreSubmission } from '../api/client';
 
-const KEY = 'quadro.v1.pendingScore';
+const KEY = 'nodra.v1.pendingScore';
 
 /** Long enough for a provider round-trip, short enough to never post a surprise. */
 const MAX_AGE_MS = 30 * 60 * 1000;

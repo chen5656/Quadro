@@ -62,10 +62,28 @@ const RouterContext = createContext<RouterValue>({
   navigate: () => {},
 });
 
+const ROUTE_TITLES: Record<Route, string> = {
+  '/': 'NODRA — A game of patterns, memory, and control',
+  '/daily': 'Daily Challenge — NODRA',
+  '/practice': 'Practice — NODRA',
+  '/tutorial': 'Learn to play NODRA — a guided round',
+  '/leaderboard': 'Leaderboard — NODRA Daily',
+  '/leaderboard/today': 'Leaderboard — NODRA Daily',
+  '/leaderboard/date': 'Leaderboard — NODRA Daily',
+  '/replay': 'Replay — NODRA',
+  '/history': 'Match History — NODRA',
+};
+
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [match, setMatch] = useState(() => normalize(window.location.pathname));
   const [search, setSearch] = useState<string>(() => window.location.search);
   const [hash, setHash] = useState<string>(() => window.location.hash.replace(/^#/, ''));
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = ROUTE_TITLES[match.route] || 'NODRA';
+    }
+  }, [match.route]);
 
   useEffect(() => {
     const onPop = () => {

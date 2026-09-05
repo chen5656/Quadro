@@ -1,5 +1,5 @@
 /**
- * Core mutable state for Quadro, plus JSON-lossless serialization.
+ * Core mutable state for NODRA, plus JSON-lossless serialization.
  *
  * Port of `backend/engine/state.py`. The bag holds per-color *counts* rather
  * than a shuffled sequence: the composition of the bag is public knowledge

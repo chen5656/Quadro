@@ -1,5 +1,5 @@
 /**
- * `/api/*` router for the Quadro Daily (§13).
+ * `/api/*` router for the NODRA Daily (§13).
  *
  * Four endpoints and a nightly cron. Every handler returns a structured error
  * rather than throwing past the runtime, so a bug never becomes an opaque 1101.
@@ -68,7 +68,7 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (path.startsWith('/api/avatar/') && request.method === 'GET') {
     return serveAvatar(env, path.slice('/api/avatar/'.length));
   }
-  if ((path === '/api/daily' || path === '/quadro/api/daily') && request.method === 'GET') {
+  if (path === '/api/daily' && request.method === 'GET') {
     const puzzleId = currentPuzzleId();
     return json({
       puzzle_id: puzzleId,
@@ -78,7 +78,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  if ((path === '/api/leaderboard' || path === '/quadro/api/leaderboard') && request.method === 'GET') {
+  if (path === '/api/leaderboard' && request.method === 'GET') {
     const requested = url.searchParams.get('puzzle_id');
     if (requested !== null && !isPuzzleId(requested)) {
       throw new HttpError(422, 'INVALID_PAYLOAD', 'puzzle_id must be YYYY-MM-DD');
@@ -99,15 +99,14 @@ async function route(request: Request, env: Env): Promise<Response> {
     );
   }
 
-  if ((path === '/api/scores' || path === '/quadro/api/scores') && request.method === 'POST') {
+  if (path === '/api/scores' && request.method === 'POST') {
     const session = await requireSession(request, env);
     const body = await request.json().catch(() => null);
     return submitScore(env.DB, session, body);
   }
 
   if (
-    (path === '/api/me/history' || path === '/quadro/api/me/history') &&
-    request.method === 'GET'
+    path === '/api/me/history' && request.method === 'GET'
   ) {
     const session = await requireSession(request, env);
     const before = url.searchParams.get('before');
@@ -133,7 +132,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  if ((path === '/api/me' || path === '/quadro/api/me') && request.method === 'DELETE') {
+  if (path === '/api/me' && request.method === 'DELETE') {
     const session = await requireSession(request, env);
     await deleteAvatars(env, session.userId).catch(() => {});
     return deleteMe(env.DB, session);

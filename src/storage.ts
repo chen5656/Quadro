@@ -6,7 +6,7 @@
  * accessor itself — the app must render correctly with none of this present.
  */
 
-const PREFIX = 'quadro.v1.';
+const PREFIX = 'nodra.v1.';
 
 function read(key: string): string | null {
   try {

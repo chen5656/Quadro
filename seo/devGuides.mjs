@@ -25,7 +25,7 @@ function rendererFor(pathname) {
 
 export function guidePagesDevServer() {
   return {
-    name: 'quadro-guide-pages-dev',
+    name: 'nodra-guide-pages-dev',
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {

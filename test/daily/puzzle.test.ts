@@ -32,7 +32,7 @@ describe('fnv1a32', () => {
   });
 
   it('returns an unsigned 32-bit integer', () => {
-    const seed = fnv1a32('quadro-daily-v1:2026-08-28');
+    const seed = fnv1a32('nodra-daily-v1:2026-08-28');
     expect(Number.isInteger(seed)).toBe(true);
     expect(seed).toBeGreaterThanOrEqual(0);
     expect(seed).toBeLessThan(2 ** 32);
@@ -97,7 +97,7 @@ describe('rollover', () => {
 
 describe('the daily deal', () => {
   it('derives the seed exactly as BR-002 specifies', () => {
-    expect(seedForPuzzle('2026-08-28')).toBe(fnv1a32('quadro-daily-v1:2026-08-28'));
+    expect(seedForPuzzle('2026-08-28')).toBe(fnv1a32('nodra-daily-v1:2026-08-28'));
   });
 
   it('deals the same initial state every time for one puzzle id (AC-010)', () => {

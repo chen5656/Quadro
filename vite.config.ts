@@ -26,9 +26,9 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//, /^\/guide(\/|$)/, /^\/(privacy|terms)(\/|$)/],
       },
       manifest: {
-        name: 'Quadro — Daily Challenge',
-        short_name: 'Quadro',
-        description: 'A daily tile-drafting puzzle. One deal a day, fastest win wins.',
+        name: 'NODRA — Daily Challenge',
+        short_name: 'NODRA',
+        description: 'A game of patterns, memory, and control. One deal a day, works offline.',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
         display: 'standalone',

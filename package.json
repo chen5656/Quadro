@@ -1,5 +1,5 @@
 {
-  "name": "quadro-web",
+  "name": "nodra-web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "bench": "vite-node test/strength.bench.ts --",
     "dev": "vite",
     "dev:api": "wrangler dev --port 8787",
-    "db:local": "wrangler d1 execute quadro --local --file worker/schema.sql",
+    "db:local": "wrangler d1 execute nodra --local --file worker/schema.sql",
     "build": "node scripts/check-engine-version.mjs && npm run typecheck && vite build && node scripts/seo-build.mjs",
     "preview": "vite preview",
     "test:worker": "vitest run --config test/worker/vitest.config.ts",

@@ -230,6 +230,8 @@ function PracticeGame({
           opponentScore={result.scores[1 - session.humanSeat]}
           ranked={false}
           onPlayAgain={session.restart}
+          onBack={onExit}
+          backLabel="Change setup"
           onWatchReplay={() => {
             try {
               const replay = replayOf(session.game, {

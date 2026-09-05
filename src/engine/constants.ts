@@ -1,5 +1,5 @@
 /**
- * Quadro constants and fixed board geometry.
+ * NODRA constants and fixed board geometry.
  *
  * A verbatim port of `backend/engine/constants.py`. Colors stay plain ints 0..4
  * for the same reason they do there: the search hot path indexes these tables
