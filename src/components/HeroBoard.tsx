@@ -222,7 +222,7 @@ function planCenter(center: readonly number[], src: readonly number[], turn: Tur
   return plan;
 }
 
-export function HeroBoard() {
+export function HeroBoard({ paused = false }: { paused?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [factories, setFactories] = useState<number[][]>(() => FACTORIES.map((f) => [...f]));
   const [center, setCenter] = useState<number[]>(emptyCenter);
@@ -230,6 +230,17 @@ export function HeroBoard() {
   const [floor, setFloor] = useState<number[]>(emptyFloor);
   const [wall, setWall] = useState<boolean[][]>(seededWall);
   const [score, setScore] = useState(OPENING_SCORE);
+
+  // Pause both token flights and score effects without resetting the preview.
+  useEffect(() => {
+    const animations = rootRef.current?.getAnimations({ subtree: true }) ?? [];
+    for (const animation of animations) {
+      if (paused) animation.pause();
+      else if (animation.playState === 'paused') animation.play();
+    }
+  }, [paused]);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   /**
    * Someone who asked for reduced motion gets the finished round instead of the
@@ -253,6 +264,9 @@ export function HeroBoard() {
     if (still) return;
     let cancelled = false;
     const inFlight = new Set<HTMLElement>();
+    const waitWhilePaused = async () => {
+      while (pausedRef.current && !cancelled) await sleep(100);
+    };
 
     const el = (id: string) => rootRef.current?.querySelector<HTMLElement>(`[data-hero-id="${id}"]`) ?? null;
 
@@ -435,6 +449,8 @@ export function HeroBoard() {
 
     async function run() {
       for (;;) {
+        await waitWhilePaused();
+        if (cancelled) return;
         const pool = FACTORIES.map((f) => [...f]);
         const centerPool = emptyCenter();
         const stage = emptyStaging();
@@ -451,6 +467,7 @@ export function HeroBoard() {
 
         // ---- Draft ------------------------------------------------------
         for (const turn of SCRIPT) {
+          await waitWhilePaused();
           if (cancelled) return;
           const before = turn.factory < 0 ? [...centerPool] : [...pool[turn.factory]];
           const plan = planCenter(centerPool, before, turn);
@@ -466,6 +483,7 @@ export function HeroBoard() {
         await sleep(SCORE_PAUSE_MS);
         let total = OPENING_SCORE;
         for (let row = 0; row < NUM_ROWS; row += 1) {
+          await waitWhilePaused();
           if (cancelled) return;
           if (stage[row].filled !== row + 1) continue;
           const color = stage[row].color;
@@ -488,6 +506,8 @@ export function HeroBoard() {
 
         // ---- Floor penalty ------------------------------------------------
         const dropped = hold.filter((c) => c >= 0).length;
+        await waitWhilePaused();
+        if (cancelled) return;
         if (dropped > 0) {
           const penalty = PENALTIES.slice(0, dropped).reduce((a, b) => a + b, 0);
           popScore(`${penalty}`, 'floor-0', false);
@@ -514,7 +534,7 @@ export function HeroBoard() {
     <div
       ref={rootRef}
       aria-hidden="true"
-      className="pointer-events-none relative mx-auto w-fit select-none rounded-2xl border border-neutral-700/60 bg-neutral-900/60 p-4 shadow-lg shadow-black/40 backdrop-blur-sm [--hero-cell:1.5rem] sm:p-5 sm:[--hero-cell:1.9rem]"
+      className="home-preview-board pointer-events-none relative mx-auto w-fit select-none [--hero-cell:1.5rem] sm:[--hero-cell:1.9rem]"
     >
       {/* Factories, and the center pile the leftovers fall into. */}
       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
