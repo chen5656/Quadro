@@ -56,12 +56,14 @@ export function Tile({
   empty = false,
   size = 'md',
   selected = false,
+  highlighted = false,
   animId,
 }: {
   color?: number;
   empty?: boolean;
   size?: keyof typeof SIZES;
   selected?: boolean;
+  highlighted?: boolean;
   animId?: string;
 }) {
   const { style } = useGameStyle();
@@ -78,7 +80,11 @@ export function Tile({
     );
   }
   const fillClass = style === 'focus' ? FILL_FOCUS[color] : FILL_NORMAL[color];
-  const ring = selected ? 'ring-2 ring-offset-1 ring-offset-neutral-900 ring-sky-300 shadow-md shadow-sky-400/40' : '';
+  const ring = selected
+    ? 'ring-2 ring-offset-1 ring-offset-neutral-900 ring-sky-300 shadow-md shadow-sky-400/40'
+    : highlighted
+    ? 'ring-2 ring-sky-400/90 shadow-sm'
+    : '';
   return (
     <div
       data-anim-id={animId}

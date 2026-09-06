@@ -132,67 +132,58 @@ export function TutorialPopover({
               zIndex: 30,
             }
       }
-      className="fixed z-30 w-[calc(100vw-24px)] max-w-sm sm:max-w-md rounded-xl border border-sky-400/80 bg-neutral-900/80 p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl ring-2 ring-sky-500/40 text-neutral-100 transition-all duration-200 ease-out"
+      className="fixed z-30 w-[calc(100vw-24px)] max-w-sm rounded-xl bg-neutral-900 p-4 text-neutral-100 shadow-[0_18px_48px_rgba(0,0,0,0.45)] transition-[left,top] duration-200 ease-out"
     >
       {/* Arrow Indicator when anchored next to a target */}
       {!isCenter && coords && (
         <div
-          className={`absolute pointer-events-none w-3 h-3 bg-neutral-900 border-sky-400/80 transform rotate-45 ${
+          className={`absolute pointer-events-none w-3 h-3 bg-neutral-900 transform rotate-45 ${
             coords.placement === 'right'
-              ? '-left-1.5 top-1/2 -translate-y-1/2 border-l border-b'
+              ? '-left-1.5 top-1/2 -translate-y-1/2'
               : coords.placement === 'left'
-              ? '-right-1.5 top-1/2 -translate-y-1/2 border-r border-t'
+              ? '-right-1.5 top-1/2 -translate-y-1/2'
               : coords.placement === 'top'
-              ? '-bottom-1.5 left-1/2 -translate-x-1/2 border-r border-b'
-              : '-top-1.5 left-1/2 -translate-x-1/2 border-l border-t'
+              ? '-bottom-1.5 left-1/2 -translate-x-1/2'
+              : '-top-1.5 left-1/2 -translate-x-1/2'
           }`}
         />
       )}
 
-      {/* Header with Title and Step Badge */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-2 w-2 rounded-full bg-sky-400 animate-ping" />
-          <h2 className="font-semibold text-base sm:text-lg text-sky-200 tracking-tight">
-            {step.title}
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 rounded-md bg-sky-950/70 border border-sky-800/60 px-2 py-0.5 text-xs font-semibold tabular-nums text-sky-300">
-            Step {stepIndex + 1} of {stepCount}
-          </span>
-          <button
-            type="button"
-            onClick={restart}
-            title="Start tutorial over"
-            className="rounded border border-neutral-700/60 px-2 py-0.5 text-[11px] text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
-          >
-            Restart
-          </button>
-        </div>
+      <div className="mb-4 h-1 overflow-hidden rounded-full bg-neutral-700" aria-hidden="true">
+        <div
+          className="h-full rounded-full bg-sky-400 transition-[width] duration-300"
+          style={{ width: `${((stepIndex + 1) / stepCount) * 100}%` }}
+        />
       </div>
 
-      {/* Coach Commentary */}
-      <div className="mt-2.5 space-y-2 text-xs sm:text-sm leading-relaxed text-neutral-200">
+      <div className="flex items-start justify-between gap-4">
+        <h2 className="text-lg font-semibold leading-tight tracking-[-0.02em] text-white">
+          {step.title}
+        </h2>
+        <span className="shrink-0 text-xs tabular-nums text-neutral-400">
+          {stepIndex + 1} / {stepCount}
+        </span>
+      </div>
+
+      <div className="mt-2 space-y-1.5 text-sm leading-5 text-neutral-300">
         {body.map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
       </div>
 
-      {/* Actions & Live Instructions */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-neutral-800">
+      <div className="mt-4 flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           {!canAdvance && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-300">
-              <svg className="w-3.5 h-3.5 shrink-0 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-300">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
               <span className="truncate">
                 {phase === 'replying'
                   ? `${OPPONENT_LABEL} is answering…`
                   : phase === 'pick'
-                  ? 'Click highlighted tiles to take.'
-                  : 'Click highlighted row to place.'}
+                  ? 'Click highlighted tokens to take.'
+                  : 'Click highlighted context line to place.'}
               </span>
             </span>
           )}
@@ -203,13 +194,13 @@ export function TutorialPopover({
             <>
               <Link
                 to="/practice"
-                className="rounded-lg bg-sky-600 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white shadow-sm hover:bg-sky-500 transition"
+                className="rounded-lg bg-sky-500 px-3.5 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-400 transition-colors"
               >
                 Play Practice
               </Link>
               <Link
                 to="/daily"
-                className="rounded-lg border border-neutral-700 px-3.5 py-1.5 text-xs sm:text-sm font-medium hover:bg-neutral-800 transition"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
               >
                 Today's Daily
               </Link>
@@ -219,13 +210,22 @@ export function TutorialPopover({
               type="button"
               onClick={next}
               disabled={!canAdvance}
-              className="rounded-lg bg-sky-600 px-4 py-1.5 text-xs sm:text-sm font-medium text-white shadow-sm hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="rounded-lg bg-sky-500 px-5 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-30 transition-colors"
             >
               Next
             </button>
           )}
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={restart}
+        title="Start tutorial over"
+        className="mt-3 text-xs text-neutral-500 underline decoration-neutral-700 underline-offset-4 hover:text-neutral-300"
+      >
+        Start over
+      </button>
     </div>
   );
 }

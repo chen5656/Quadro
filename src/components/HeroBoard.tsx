@@ -21,6 +21,26 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { COLOR_INITIALS, GRID_COLOR, NUM_ROWS, PENALTIES, gridCol, scorePlacement } from '../engine';
 
+export type HeroStep = {
+  text: string;
+  phase: 1 | 2 | 3;
+};
+
+const OPENING_HERO_STEP: HeroStep = {
+  text: 'Pick a color. Take every token of that color.',
+  phase: 1,
+};
+
+const PLACING_HERO_STEP: HeroStep = {
+  text: 'Put those tokens into one context line on the left.',
+  phase: 2,
+};
+
+const SCORING_HERO_STEP: HeroStep = {
+  text: 'Fill a line to crystallize a token onto your memory grid and score.',
+  phase: 3,
+};
+
 const FILL = [
   'bg-tile-blue text-white border-blue-400/40',
   'bg-tile-yellow text-neutral-900 border-amber-300/40',
@@ -226,7 +246,13 @@ function planCenter(center: readonly number[], src: readonly number[], turn: Tur
   return plan;
 }
 
-export function HeroBoard({ paused = false }: { paused?: boolean }) {
+export function HeroBoard({
+  paused = false,
+  onStepChange,
+}: {
+  paused?: boolean;
+  onStepChange?: (step: HeroStep) => void;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [factories, setFactories] = useState<number[][]>(() => FACTORIES.map((f) => [...f]));
   const [center, setCenter] = useState<number[]>(emptyCenter);
@@ -263,6 +289,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
     setWall(end.wall);
     setStaging(end.staging);
     setScore(end.score);
+    onStepChange?.(SCORING_HERO_STEP);
   }, [still]);
 
   useEffect(() => {
@@ -499,13 +526,15 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
         setFloor(emptyFloor());
         setWall(seededWall());
         setScore(OPENING_SCORE);
+        onStepChange?.(OPENING_HERO_STEP);
         await sleep(TURN_PAUSE_MS);
         if (cancelled) return;
 
         // ---- Draft ------------------------------------------------------
-        for (const turn of SCRIPT) {
+        for (const [turnIndex, turn] of SCRIPT.entries()) {
           await waitWhilePaused();
           if (cancelled) return;
+          if (turnIndex === 3) onStepChange?.(PLACING_HERO_STEP);
           const before = turn.factory < 0 ? [...centerPool] : [...pool[turn.factory]];
           const plan = planCenter(centerPool, before, turn);
           if (turn.factory >= 0) pool[turn.factory] = before.map(() => -1);
@@ -517,6 +546,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
         }
 
         // ---- Score: only now that the round has run dry -------------------
+        onStepChange?.(SCORING_HERO_STEP);
         await sleep(SCORE_PAUSE_MS);
         let total = OPENING_SCORE;
         for (let row = 0; row < NUM_ROWS; row += 1) {
@@ -546,7 +576,6 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
           removeFlight();
           highlightScore(grid, row, col);
           popScore(`+${points}`, `wall-${row}-${col}`, true);
-
           await sleep(SCORE_PAUSE_MS);
         }
 
@@ -575,7 +604,7 @@ export function HeroBoard({ paused = false }: { paused?: boolean }) {
       for (const animation of scoreAnimations) animation.cancel();
       for (const node of inFlight) node.remove();
     };
-  }, [still]);
+  }, [still, onStepChange]);
 
   return (
     <div

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HeroBoard } from '../components/HeroBoard';
+import { HeroBoard, type HeroStep } from '../components/HeroBoard';
 import { Link } from '../router';
 import './Home.css';
 
@@ -12,13 +12,18 @@ function Arrow() {
 }
 
 const steps = [
-  { title: 'Choose a color.', text: 'Take every token of one color from a shared node. The rest move to the center.' },
-  { title: 'Complete a row.', text: 'Fill a row to place a token on your memory grid. Connect tokens to score more.' },
-  { title: 'Think one move ahead.', text: 'Take what your AI rival needs. Plan carefully: tokens that don’t fit cost points.' },
+  { title: 'Choose a color.', text: 'Take every token of one color from an attention node. The rest move to the buffer.' },
+  { title: 'Complete a line.', text: 'Fill a context line to crystallize a token onto your memory grid. Connect tokens to score more.' },
 ];
+
+const openingDemoStep: HeroStep = {
+  text: 'Pick a color. Take every token of that color.',
+  phase: 1,
+};
 
 export function Home() {
   const [paused, setPaused] = useState(false);
+  const [demoStep, setDemoStep] = useState<HeroStep>(openingDemoStep);
 
   return (
     <div className="home-page">
@@ -37,6 +42,9 @@ export function Home() {
         <figure className="home-demo" aria-label="Game preview: colored tokens move from shared nodes into rows, then onto a five-by-five memory grid to score points.">
           <div className="home-demo-header">
             <span>NODRA <span className="home-demo-label">/ Game preview</span></span>
+            <span className={`home-demo-guide home-demo-guide--${demoStep.phase}`}>
+              <span aria-hidden="true">{demoStep.phase}/3</span> {demoStep.text}
+            </span>
             <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused} aria-label={paused ? 'Resume game preview' : 'Pause game preview'}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 {paused ? <path d="m5 3 8 5-8 5z" /> : <path d="M4 3h3v10H4zm5 0h3v10H9z" />}
@@ -44,24 +52,25 @@ export function Home() {
               {paused ? 'Resume' : 'Pause'}
             </button>
           </div>
-          <div className="home-board-stage"><HeroBoard paused={paused} /></div>
-          <figcaption><span>Choose. Place. Connect.</span><span>A round in motion.</span></figcaption>
+          <div className="home-board-stage"><HeroBoard paused={paused} onStepChange={setDemoStep} /></div>
         </figure>
       </section>
 
       <section className="home-how" aria-labelledby="home-how-title">
         <div className="home-section-heading">
           <h2 id="home-how-title">A few rules. Plenty to master.</h2>
-          <Link to="/tutorial" className="home-text-link">Learn by playing <Arrow /></Link>
         </div>
-        <ol className="home-steps">
-          {steps.map((step, index) => (
-            <li key={step.title}>
-              <span className="home-step-number" aria-hidden="true">{index + 1}</span>
-              <div><h3>{step.title}</h3><p>{step.text}</p></div>
-            </li>
-          ))}
-        </ol>
+        <div className="home-rules-layout">
+          <ol className="home-steps">
+            {steps.map((step, index) => (
+              <li key={step.title}>
+                <span className="home-step-number" aria-hidden="true">{index + 1}</span>
+                <div><h3>{step.title}</h3><p>{step.text}</p></div>
+              </li>
+            ))}
+          </ol>
+          <Link to="/tutorial" className="home-learn-button"><span>❓ Learn by playing</span><Arrow /></Link>
+        </div>
       </section>
 
       <section className="home-about" aria-labelledby="home-about-title">

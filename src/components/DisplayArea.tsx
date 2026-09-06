@@ -23,18 +23,13 @@ export function DisplayArea({
 
   const factoryGroup = (source: number, counts: number[]) => {
     const colors = counts.map((n, c) => [c, n] as const).filter(([, n]) => n > 0);
-    const lit = spotlight?.kind === 'source' && spotlight.index === source;
 
     return (
       <div
         key={source}
         data-anim-id={`fac-${source}`}
         data-tutorial-target={`source-${source}`}
-        className={`grid grid-cols-2 gap-1 rounded-full border bg-neutral-950/40 p-1.5 transition-all ${
-          lit
-            ? 'border-sky-400 ring-2 ring-sky-400/80 shadow-md shadow-sky-500/20'
-            : 'border-neutral-700/50 hover:border-neutral-600'
-        }`}
+        className="grid grid-cols-2 gap-1 rounded-full border border-neutral-700/50 hover:border-neutral-600 bg-neutral-950/40 p-1.5 transition-all"
         aria-label={sourceLabel(source)}
       >
         {colors.length === 0 ? (
@@ -45,6 +40,8 @@ export function DisplayArea({
           colors.map(([color, n]) => {
             const enabled = canSelect(source, color);
             const active = selection?.source === source && selection.color === color;
+            const highlighted =
+              enabled && spotlight?.kind === 'source' && spotlight.index === source && !active;
             return (
               <button
                 key={color}
@@ -53,7 +50,7 @@ export function DisplayArea({
                 onClick={() => select(source, color)}
                 aria-pressed={active}
                 aria-label={`Take ${n} ${COLOR_NAMES[color]} from ${sourceLabel(source)}`}
-                className={`contents ${!enabled ? 'cursor-not-allowed opacity-40' : ''}`}
+                className={`contents ${!enabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
               >
                 {Array.from({ length: n }, (_, i) => (
                   <Tile
@@ -61,6 +58,7 @@ export function DisplayArea({
                     animId={`fac-${source}-${color}-${i}`}
                     color={color}
                     selected={active}
+                    highlighted={highlighted}
                     size="sm"
                   />
                 ))}
@@ -75,7 +73,6 @@ export function DisplayArea({
   const centerGroup = () => {
     const counts = state.center;
     const colors = counts.map((n, c) => [c, n] as const).filter(([, n]) => n > 0);
-    const lit = spotlight?.kind === 'source' && spotlight.index === CENTER;
     const hasItems = colors.length > 0 || state.center_has_token;
 
     return (
@@ -83,9 +80,7 @@ export function DisplayArea({
         key={CENTER}
         data-anim-id="center-pool"
         data-tutorial-target={`source-${CENTER}`}
-        className={`flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem] py-1 transition-all rounded-lg ${
-          lit ? 'ring-2 ring-sky-400/80 bg-sky-950/20 px-2' : ''
-        }`}
+        className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem] py-1 transition-all rounded-lg"
         aria-label={sourceLabel(CENTER)}
       >
         {state.center_has_token && (
@@ -96,6 +91,8 @@ export function DisplayArea({
         {colors.map(([color, n]) => {
           const enabled = canSelect(CENTER, color);
           const active = selection?.source === CENTER && selection.color === color;
+          const highlighted =
+            enabled && spotlight?.kind === 'source' && spotlight.index === CENTER && !active;
           return (
             <button
               key={color}
@@ -105,7 +102,7 @@ export function DisplayArea({
               aria-pressed={active}
               aria-label={`Take ${n} ${COLOR_NAMES[color]} from ${sourceLabel(CENTER)}`}
               className={`flex shrink-0 gap-1 rounded p-0.5 transition-all ${
-                enabled ? 'hover:bg-neutral-800 hover:scale-105' : 'cursor-not-allowed opacity-40'
+                enabled ? 'hover:bg-neutral-800 cursor-pointer' : 'cursor-not-allowed opacity-40'
               } ${active ? 'bg-sky-900/70 ring-2 ring-sky-400 scale-105 shadow-md' : ''}`}
             >
               {Array.from({ length: n }, (_, i) => (
@@ -114,6 +111,7 @@ export function DisplayArea({
                   animId={`center-${color}-${i}`}
                   color={color}
                   selected={active}
+                  highlighted={highlighted}
                   size="sm"
                 />
               ))}

@@ -85,7 +85,7 @@ function Nav() {
       {item('/daily', 'Daily', style !== 'focus' ? <span className="text-xs">📅</span> : undefined)}
       {item('/practice', 'Practice', style !== 'focus' ? <span className="text-xs">🎯</span> : undefined)}
       {item('/leaderboard', 'Leaderboard', style !== 'focus' ? <TrophyIcon /> : undefined)}
-      {item('/tutorial', 'Learn')}
+      {item('/tutorial', 'Learn', style !== 'focus' ? <span className="text-xs">❓</span> : undefined)}
     </nav>
   );
 }

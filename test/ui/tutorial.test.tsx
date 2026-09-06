@@ -79,7 +79,7 @@ describe('the tutorial page', () => {
 
   it('opens on step 1 with Next enabled and the board inert', () => {
     show();
-    expect(screen.getByText(`Step 1 of ${STEPS.length}`)).toBeInTheDocument();
+    expect(screen.getByText(`1 / ${STEPS.length}`)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
     // Nothing on a talk step is playable, so every tile group is disabled.
     const takes = screen.getAllByRole('button', { name: /^Take / });
