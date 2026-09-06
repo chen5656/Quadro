@@ -162,6 +162,7 @@ export function guidePage({ path, title, description, headings, html, updated, s
     <meta name="color-scheme" content="dark" />
     ${head({ path, title, description, type: 'article' })}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <style>${GUIDE_CSS}</style>
     ${structuredData.map(jsonLd).join('\n    ')}

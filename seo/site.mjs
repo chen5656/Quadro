@@ -8,7 +8,7 @@
 
 export const ORIGIN = 'https://acgame.win';
 export const SITE_NAME = 'NODRA';
-export const OG_IMAGE = '/og.png';
+export const OG_IMAGE = '/og-nodra.png';
 export const OG_IMAGE_ALT =
   'NODRA — A game of patterns, memory, and control.';
 export const TWITTER_CARD = 'summary_large_image';
