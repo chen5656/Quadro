@@ -44,7 +44,15 @@ export const storage = {
   displayScale: () => read('displayScale'),
   setDisplayScale: (scale: string) => write('displayScale', scale),
 
-  /** Visual style theme: 'focus' | 'normal' | 'classic' */
+  /** Background music switch: 'on' | 'off'. Absent means on. */
+  soundMusic: () => read('soundMusic'),
+  setSoundMusic: (value: string) => write('soundMusic', value),
+
+  /** Sound-effects switch: 'on' | 'off'. Absent means on. */
+  soundSfx: () => read('soundSfx'),
+  setSoundSfx: (value: string) => write('soundSfx', value),
+
+  /** Visual style theme: 'focus' | 'classic' */
   gameStyle: () => read('gameStyle'),
   setGameStyle: (style: string) => write('gameStyle', style),
 

@@ -5,6 +5,7 @@ import { formatElapsed } from './Timer';
 import type { SubmissionState } from '../game/useSubmission';
 import { isRankedLevel } from '../daily/levels';
 import { Link } from '../router';
+import { PLAY_AGAIN_LABEL } from '../copy/outcome';
 
 export interface GameResultCardProps {
   humanWon: boolean;
@@ -323,13 +324,13 @@ export function GameResultCard({
               </button>
             )}
 
-            {/* Play again button */}
+            {/* Restart button */}
             <button
               type="button"
               onClick={onPlayAgain}
               className="inline-flex w-full lg:w-44 cursor-pointer items-center justify-center rounded-lg border border-neutral-700 bg-neutral-900/80 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:bg-neutral-800 hover:text-white active:scale-[0.98]"
             >
-              Play again
+              {PLAY_AGAIN_LABEL}
             </button>
 
             {/* Back button */}

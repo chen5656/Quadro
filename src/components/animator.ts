@@ -11,6 +11,7 @@ import {
   STAGING_CAPACITY,
   type TileScored,
 } from '../engine';
+import { sfx } from '../audio';
 import type { GameStyle } from '../context/GameStyleContext';
 
 const FILL_NORMAL = [
@@ -617,6 +618,10 @@ export async function animateSettlement(
   if (scoredEvents.length === 0 && penaltyEvents.length === 0 && bonusEvents.length === 0) return;
 
   if (!animator.isEnabled()) {
+    // Without the flights there is nothing to score sound against, so the whole
+    // settlement gets one bell rather than a dozen on the same frame.
+    if (scoredEvents.length > 0) sfx('score');
+    if (penaltyEvents.some((e) => e.tiles > 0)) sfx('penalty');
     for (const event of scoredEvents) applyScored(view, event);
     for (const event of penaltyEvents) applyPenalty(view, event);
     commit();
@@ -643,6 +648,9 @@ export async function animateSettlement(
 
     animator.popIn([toId]);
     animator.popScore(`+${points}`, toId, true);
+    // The bell climbs with the tile's own score, so a row that pays five points
+    // sounds like a run rather than five identical dings.
+    sfx('score', { rate: 1 + Math.min(points, 8) * 0.045 });
 
     await sleep(340);
   }
@@ -650,6 +658,7 @@ export async function animateSettlement(
   for (const event of penaltyEvents) {
     const { player, points, tiles } = event;
     if (tiles > 0) {
+      sfx('penalty', { rate: Math.max(0.8, 1 - tiles * 0.03) });
       animator.popScore(`${points}`, `floor-${player}-0`, false);
       const floorIds = Array.from({ length: Math.min(tiles, 7) }, (_, i) => `floor-${player}-${i}`);
       await animator.fadeOut(floorIds, 320);
@@ -672,6 +681,7 @@ export async function animateSettlement(
       for (let r = 0; r < 5; r += 1) {
         if (grid[r].every(Boolean)) {
           const rowIds = Array.from({ length: 5 }, (_, c) => `wall-${player}-${r}-${c}`);
+          sfx('bonus', { rate: 0.94 });
           animator.popScore('+2', `wall-${player}-${r}-2`, true);
           await animator.streakLine(rowIds, { color: '#ffffff', ms: 600 });
           view.players[player].score += 2;
@@ -693,6 +703,7 @@ export async function animateSettlement(
         }
         if (full) {
           const colIds = Array.from({ length: 5 }, (_, r) => `wall-${player}-${r}-${c}`);
+          sfx('bonus', { rate: 1 });
           animator.popScore('+7', `wall-${player}-2-${c}`, true);
           await animator.streakLine(colIds, { color: '#38bdf8', ms: 650 });
           view.players[player].score += 7;
@@ -715,6 +726,7 @@ export async function animateSettlement(
         }
         if (full) {
           const colorIds = Array.from({ length: 5 }, (_, r) => `wall-${player}-${r}-${(color + r) % 5}`);
+          sfx('bonus', { rate: 1.08 });
           animator.popScore('+10', `wall-${player}-2-${(color + 2) % 5}`, true);
           await animator.streakLine(colorIds, { color: NEON_COLORS[color] ?? '#facc15', ms: 750 });
           view.players[player].score += 10;

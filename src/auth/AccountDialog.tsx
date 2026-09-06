@@ -148,6 +148,11 @@ function AvatarRow({
           onError(body?.error?.message ?? 'The upload failed.');
           return;
         }
+        const data = (await response.json().catch(() => null)) as { image_url?: string } | null;
+        if (data?.image_url) {
+          setPreview(data.image_url);
+          setImageFailed(false);
+        }
         onUploaded();
       } catch {
         onError("Couldn't reach the server.");
@@ -158,13 +163,19 @@ function AvatarRow({
     [onError, onUploaded],
   );
 
+  const [preview, setPreview] = useState<string | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  const displayImage = preview ?? user.image;
+
   return (
     <div className="flex items-center gap-3">
-      {user.image ? (
+      {displayImage && !imageFailed ? (
         <img
-          src={user.image}
+          src={displayImage}
           alt=""
           className="h-14 w-14 rounded-full border border-neutral-700 object-cover"
+          onError={() => setImageFailed(true)}
         />
       ) : (
         <div className="flex h-14 w-14 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-lg text-neutral-500">

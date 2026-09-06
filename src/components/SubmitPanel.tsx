@@ -6,6 +6,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { PLAY_AGAIN_LABEL } from '../copy/outcome';
 
 import { useIdentity } from '../auth';
 import type { SubmissionState } from '../game/useSubmission';
@@ -158,7 +159,7 @@ function PlayAgain({ onPlayAgain }: { onPlayAgain: () => void }) {
       onClick={onPlayAgain}
       className="mt-3 rounded-lg border border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-800"
     >
-      Play again
+      {PLAY_AGAIN_LABEL}
     </button>
   );
 }

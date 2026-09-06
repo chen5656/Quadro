@@ -1,5 +1,6 @@
 import type { Session } from '../game/useGameSession';
 import { GameOverBurst } from './GameOverBurst';
+import { outcomeCopy, outcomeOf } from '../copy/outcome';
 
 /**
  * What the board is doing right now. The AI-thinking state is deliberately
@@ -20,13 +21,11 @@ export function StatusLine({ session, opponentLabel }: { session: Session; oppon
     const result = game.result();
     const mine = result.scores[humanSeat];
     const theirs = result.scores[1 - humanSeat];
-    const verdict = result.draw ? 'Draw' : humanWon ? 'You win' : 'You lose';
+    const outcome = outcomeOf(result.draw, humanWon);
+    const { title } = outcomeCopy(outcome);
     return (
       <>
-        <GameOverBurst
-          text={verdict}
-          tone={result.draw ? 'draw' : humanWon ? 'win' : 'lose'}
-        />
+        <GameOverBurst text={title} tone={outcome} />
         <p className="text-sm" role="status">
         <span className={humanWon ? 'font-semibold text-sky-300' : 'font-semibold text-neutral-300'}>
           {result.draw ? 'Draw' : humanWon ? 'You win' : `${opponentLabel} wins`}

@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { storage } from '../storage';
 
-export type GameStyle = 'focus' | 'normal' | 'classic';
+export type GameStyle = 'focus' | 'classic';
 
 export interface StyleOption {
   value: GameStyle;
@@ -21,11 +21,6 @@ export const GAME_STYLES: readonly StyleOption[] = [
     value: 'focus',
     label: 'Focus',
     description: 'Subtle colors, letter initials, no avatars/badges.',
-  },
-  {
-    value: 'normal',
-    label: 'Normal',
-    description: 'Vibrant tiles, color-coded user icons, clean layout.',
   },
   {
     value: 'classic',
@@ -47,9 +42,8 @@ const GameStyleContext = createContext<GameStyleContextValue>({
 export function GameStyleProvider({ children }: { children: ReactNode }) {
   const [style, setStyleState] = useState<GameStyle>(() => {
     const saved = storage.gameStyle();
-    if (saved === 'focus' || saved === 'normal' || saved === 'classic') {
-      return saved;
-    }
+    if (saved === 'focus') return 'focus';
+    // 'normal' was removed; those players land on the closest remaining style.
     return 'classic';
   });
 

@@ -24,8 +24,8 @@ better-auth stores it in `user.name`, but the board reads `user.nickname`, which
 the player types themselves; with none set it falls back to `player-<6 chars>`.
 
 Avatars are uploaded to R2 (`PUT /api/me/avatar`, raw bytes, 1 MB cap) and
-served back through the Worker at `/api/avatar/<userId>/<uuid>.<ext>`, which is
-what keeps the CSP at `img-src 'self'`.
+served back through the Worker at `/api/avatar/<userId>/<uuid>.<ext>`, while
+OAuth provider avatars (Google, Apple, LinkedIn) are allowed in CSP `img-src`.
 
 ## Layout
 

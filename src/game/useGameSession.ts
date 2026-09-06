@@ -28,6 +28,7 @@ import { randomAgentSeed } from '../ai';
 import { AiClient, AiDisposed, type AiMode, type AiSpec } from './aiClient';
 import type { Spotlight } from '../tutorial/script';
 import config from '../config';
+import { sfx } from '../audio';
 import { type Animator, animateDraft, animateSettlement } from '../components/animator';
 
 export type SessionStatus =
@@ -191,7 +192,14 @@ export function useGameSession(options: SessionOptions): Session {
       return at;
     });
     setStatus('game-over');
-  }, [startedAt]);
+    const finished = gameRef.current;
+    if (finished?.isOver()) {
+      const outcome = finished.result();
+      const won = !outcome.draw && outcome.winner === humanSeat;
+      // After the last bonus line has finished ringing.
+      window.setTimeout(() => sfx(won ? 'win' : 'lose'), 380);
+    }
+  }, [humanSeat, startedAt]);
 
   /**
    * Play the round settlement out on a stand-in board so it can be watched.
@@ -214,6 +222,11 @@ export function useGameSession(options: SessionOptions): Session {
           displayRef.current = null;
           bump();
         }
+      }
+      // The round turning over, but not the game ending — that has its own
+      // sting, and the two on top of each other is a pile-up.
+      if (events.some((e) => e.kind === 'round_end') && !gameRef.current?.isOver()) {
+        sfx('round');
       }
     },
     [bump],
@@ -268,6 +281,9 @@ export function useGameSession(options: SessionOptions): Session {
         if (!postDraft.draftingDone() && postDraft.current !== humanSeat) {
           getAi().prefetch(postDraft, postDraft.current);
         }
+
+        // The opponent's move, one step back in the mix so it reads as theirs.
+        sfx('place', { rate: move.action.dest === PENALTY_DEST ? 0.78 : 0.94, gain: 0.7 });
 
         if (animatorRef.current?.isEnabled()) {
           await animateDraft(animatorRef.current, beforeState, move.action, currentSeat);
@@ -339,12 +355,19 @@ export function useGameSession(options: SessionOptions): Session {
 
   const select = useCallback(
     (source: number, color: number) => {
-      if (!canSelect(source, color)) return;
-      setSelection((prev) =>
-        prev && prev.source === source && prev.color === color ? null : { source, color },
-      );
+      if (!canSelect(source, color)) {
+        // A tap that cannot do anything still deserves an answer, but only
+        // while it is the player's move — the AI's turn is not their mistake.
+        if (humansTurn) sfx('invalid');
+        return;
+      }
+      const deselecting =
+        selection !== null && selection.source === source && selection.color === color;
+      // Picking up and putting down are the same tick, a tone apart.
+      sfx('select', { rate: deselecting ? 0.86 : 1 });
+      setSelection(deselecting ? null : { source, color });
     },
-    [canSelect],
+    [canSelect, humansTurn, selection],
   );
 
   const clearSelection = useCallback(() => setSelection(null), []);
@@ -362,7 +385,13 @@ export function useGameSession(options: SessionOptions): Session {
 
   const place = useCallback(
     async (dest: number) => {
-      if (!selection || !canPlace(dest)) return;
+      if (!selection || !canPlace(dest)) {
+        if (selection && humansTurn) sfx('invalid');
+        return;
+      }
+      // Ahead of the flight, so the sound lands with the player's tap rather
+      // than a few hundred milliseconds after it.
+      sfx('place', { rate: dest === PENALTY_DEST ? 0.82 : 1 });
       const myGeneration = generation.current;
       const action = new Action(selection.source, selection.color, dest);
 
@@ -422,6 +451,7 @@ export function useGameSession(options: SessionOptions): Session {
       game,
       getAi,
       humanSeat,
+      humansTurn,
       maybePrefetchAi,
       playSettlement,
       runAiTurn,

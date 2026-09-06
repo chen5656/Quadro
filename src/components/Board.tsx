@@ -9,6 +9,7 @@ import { Link } from '../router';
 import { createAnimator } from './animator';
 import { DisplayArea } from './DisplayArea';
 import { COLOR_DOTS } from './GameHeader';
+import { outcomeCopy, outcomeOf } from '../copy/outcome';
 import { GameOverBurst } from './GameOverBurst';
 import { StackedLayout, WideLayout, type BoardSlots } from './layouts';
 import { PlayerBoard } from './PlayerBoard';
@@ -419,8 +420,8 @@ export function Board({
     <div ref={root} className="azul-main-layout relative w-full max-w-full">
       {isGameOver && gameResult && (
         <GameOverBurst
-          text={gameResult.draw ? 'Draw' : session.humanWon ? 'You win' : 'You lose'}
-          tone={gameResult.draw ? 'draw' : session.humanWon ? 'win' : 'lose'}
+          text={outcomeCopy(outcomeOf(gameResult.draw, session.humanWon)).title}
+          tone={outcomeOf(gameResult.draw, session.humanWon)}
         />
       )}
       {/* Screen-reader accessible live status */}

@@ -14,6 +14,7 @@ import { Tutorial } from './routes/Tutorial';
 import { Link, useRouter } from './router';
 import { useLayoutMode } from './components/useLayoutMode';
 import { useGameStyle } from './context/GameStyleContext';
+import { useMusic } from './audio';
 
 /** Routes that are a game surface: on phones and tablets they own the screen. */
 const GAME_ROUTES = new Set(['/tutorial', '/practice', '/daily']);
@@ -100,6 +101,9 @@ export function App() {
    * surface hides them and offers its own back link instead.
    */
   const immersive = useLayoutMode() === 'stacked' && GAME_ROUTES.has(route);
+  // Two beds, chosen by where the player is: the darker one over a board, the
+  // open one everywhere else. Neither can start before the first gesture.
+  useMusic(GAME_ROUTES.has(route) ? 'game' : 'menu');
 
   return (
     <div className="min-h-dvh">

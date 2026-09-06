@@ -11,12 +11,10 @@ describe('Gameplay Animations', () => {
     expect(animator.isEnabled()).toBe(false);
   });
 
-  it('enables animations in classic and normal styles when reduced motion is off', () => {
+  it('enables animations in classic style when reduced motion is off', () => {
     const rootRef = { current: document.createElement('div') };
     const classicAnimator = createAnimator(rootRef, 'classic');
-    const normalAnimator = createAnimator(rootRef, 'normal');
     expect(classicAnimator.isEnabled()).toBe(true);
-    expect(normalAnimator.isEnabled()).toBe(true);
   });
 
   it('animator methods resolve safely without error even without rendered DOM layout', async () => {

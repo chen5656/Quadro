@@ -3,6 +3,11 @@
 # no third-party script, iframe or XHR — and avatars are served by the Worker
 # from R2, so `img-src 'self'` covers them.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com https://*.apple.com https://*.apple-mapkit.com https://media.licdn.com; connect-src 'self'; media-src 'self'; worker-src 'self' blob:; frame-src 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+
+# Generated once and never edited in place; a new sound design ships as a new
+# file, so this can be cached for as long as the browser will keep it.
+/audio/*
+  Cache-Control: public, max-age=31536000, immutable

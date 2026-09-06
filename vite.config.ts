@@ -24,6 +24,21 @@ export default defineConfig({
         // worse than an honest offline state. /guide/* is static HTML built
         // after this plugin runs, so the app shell must not shadow it either.
         navigateFallbackDenylist: [/^\/api\//, /^\/guide(\/|$)/, /^\/(privacy|terms)(\/|$)/],
+        // Audio is deliberately outside the precache — a player who never turns
+        // the sound on should not pay 1.5 MB to install the game. It is cached
+        // the first time it is heard instead, which is enough to keep an
+        // offline Practice game sounding like the online one.
+        runtimeCaching: [
+          {
+            urlPattern: /^\/audio\/.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'nodra-audio',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'NODRA — Daily Challenge',

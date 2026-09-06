@@ -1,7 +1,7 @@
 /**
  * The header's ⚙ settings menu.
  *
- * Style, scale, and opponent AI level live behind this button.
+ * Style, scale, sound, and opponent AI level live behind this button.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +10,9 @@ import { DAILY_LEVELS, dailyHrefFor, isRankedLevel, resolveDailyLevel } from '..
 import { practiceHrefFor, resolvePracticeLevel } from '../practice/levels';
 import { DisplayScaleControl } from './DisplayScaleControl';
 import { GameStyleControl } from './GameStyleControl';
+import { SoundControl } from './SoundControl';
 import { useRouter } from '../router';
+import { sfx } from '../audio';
 
 export function SettingsMenu() {
   const [open, setOpen] = useState(false);
@@ -44,7 +46,10 @@ export function SettingsMenu() {
     <div ref={wrapRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          sfx('ui');
+          setOpen((v) => !v);
+        }}
         aria-label="Settings"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -101,6 +106,9 @@ export function SettingsMenu() {
           <div className="flex flex-col gap-2">
             <GameStyleControl />
             <DisplayScaleControl />
+          </div>
+          <div className="mt-3 border-t border-neutral-800 pt-3">
+            <SoundControl />
           </div>
         </div>
         </>

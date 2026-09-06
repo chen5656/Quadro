@@ -6,10 +6,12 @@
  * would be a promise this account cannot keep until a provider is linked.
  */
 
+import { useState } from 'react';
 import { useIdentity } from './identity';
 
 export function AuthControl() {
   const identity = useIdentity();
+  const [imageFailed, setImageFailed] = useState(false);
 
   if (!identity.ready) {
     return <span className="text-xs text-neutral-600">…</span>;
@@ -34,8 +36,13 @@ export function AuthControl() {
       className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded border border-neutral-700 py-0.5 pl-0.5 pr-2 text-sm hover:bg-neutral-800"
       aria-label="Your account"
     >
-      {identity.imageUrl ? (
-        <img src={identity.imageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+      {identity.imageUrl && !imageFailed ? (
+        <img
+          src={identity.imageUrl}
+          alt=""
+          className="h-6 w-6 rounded-full object-cover"
+          onError={() => setImageFailed(true)}
+        />
       ) : (
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-800 text-xs text-neutral-400">
           {(identity.displayName ?? '?').slice(0, 1).toUpperCase()}
