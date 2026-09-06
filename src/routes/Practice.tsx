@@ -10,11 +10,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QuadroGame } from '../engine';
 import { LEVELS, LEVEL_LABELS, type AgentLevel } from '../ai';
 import { Board } from '../components/Board';
+import { LevelPickerModal } from '../components/LevelPickerModal';
 import { GameResultCard } from '../components/GameResultCard';
 import { RobotAvatar } from '../components/RobotAvatar';
 import { useGameStyle } from '../context/GameStyleContext';
 import { useGameSession } from '../game/useGameSession';
-import { practiceHrefFor, resolvePracticeLevel } from '../practice/levels';
+import { PRACTICE_LEVELS, practiceHrefFor, resolvePracticeLevel } from '../practice/levels';
 import { replayOf, replayUrl } from '../replay/share';
 import { storage } from '../storage';
 import { useRouter } from '../router';
@@ -182,6 +183,7 @@ function PracticeGame({
   const ai = useMemo(() => ({ level: setup.level }), [setup.level]);
   const session = useGameSession({ newGame, ai, timed: false });
   const { style } = useGameStyle();
+  const [showSettings, setShowSettings] = useState(false);
   const opponentLabel = LEVEL_LABELS[setup.level];
 
   const topRight = (
@@ -215,7 +217,7 @@ function PracticeGame({
     </div>
   );
 
-  const { navigate } = useRouter();
+  const { search, navigate } = useRouter();
   const result = session.status === 'game-over' ? session.game.result() : null;
 
   return (
@@ -254,7 +256,17 @@ function PracticeGame({
         humanLabel="You"
         opponentLabel={opponentLabel}
         topRight={topRight}
+        onChangeLevel={() => setShowSettings(true)}
         title="Practice"
+      />
+
+      <LevelPickerModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        levels={PRACTICE_LEVELS}
+        selected={setup.level}
+        onSelect={(next) => navigate(practiceHrefFor(next, search))}
+        description="Pick the opponent. Practice games are never timed, recorded or posted to the leaderboard."
       />
     </div>
   );

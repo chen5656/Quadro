@@ -9,6 +9,16 @@
 import { LEVELS, type AgentLevel } from '../ai';
 import { storage } from '../storage';
 
+/** Strongest first, matching the Daily's picker order. */
+export const PRACTICE_LEVELS: readonly AgentLevel[] = [
+  'extreme',
+  'master',
+  'expert',
+  'hard',
+  'medium',
+  'easy',
+] as const;
+
 const isLevel = (value: string | null): value is AgentLevel =>
   value !== null && (LEVELS as readonly string[]).includes(value);
 

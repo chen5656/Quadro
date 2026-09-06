@@ -13,8 +13,14 @@ export type LayoutMode = 'stacked' | 'wide';
 
 /** Above an iPad's 820px portrait width, so tablets stay stacked. */
 const WIDE_MIN_WIDTH = 900;
-/** Three columns of board need real height; below this the stack reads better. */
-const WIDE_MIN_HEIGHT = 620;
+/**
+ * Three columns of board need *some* height, but not much: a 13" laptop with a
+ * tab strip, a bookmarks bar and the Dock leaves well under 620px, and it was
+ * falling into the phone stack — one narrow column marooned in a sea of empty
+ * desktop. The columns shrink gracefully (tiles are sized off `100dvh`), so the
+ * bar only has to exclude genuinely short viewports like a phone in landscape.
+ */
+const WIDE_MIN_HEIGHT = 500;
 
 const QUERY = `(min-width: ${WIDE_MIN_WIDTH}px) and (min-height: ${WIDE_MIN_HEIGHT}px)`;
 

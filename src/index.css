@@ -212,11 +212,21 @@
  */
 @media (min-width: 768px) {
   .azul-board .azul-tile {
-    --azul-tile: clamp(1rem, min(calc((100cqi - 5rem) / 10), calc((100dvh - 280px) / 13)), 2.75rem);
+    /*
+     * The height term used to divide by 13 — far more rows than a board has.
+     * A board is ~10.5 tiles tall including its penalty row and padding, so on
+     * a short laptop viewport that term threw away a third of the room it had.
+     */
+    --azul-tile: clamp(1rem, min(calc((100cqi - 5rem) / 10), calc((100dvh - 300px) / 11)), 2.75rem);
   }
 
   .azul-display-area .azul-tile {
-    --azul-tile: clamp(1.5rem, min(calc((100cqi - 6rem) / 11), calc((100dvh - 340px) / 8)), 3.25rem);
+    /*
+     * Five discs, each two tiles wide, must stay on ONE row: the budget is
+     * 10 tiles plus 5 discs' padding and 4 gaps — ~8.5rem of chrome. The old
+     * `/11` was a hair too generous and the fifth factory wrapped around 1280px.
+     */
+    --azul-tile: clamp(1.5rem, min(calc((100cqi - 8.5rem) / 10), calc((100dvh - 340px) / 8)), 3.25rem);
   }
 }
 

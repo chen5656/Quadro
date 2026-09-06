@@ -10,12 +10,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { useMusic } from '../audio';
 import { getLeaderboard } from '../api/client';
 import { useIdentity } from '../auth';
 import { Board } from '../components/Board';
 import { GameResultCard } from '../components/GameResultCard';
-import { Modal } from '../components/Modal';
-import { RobotAvatar } from '../components/RobotAvatar';
+import { LevelPickerModal } from '../components/LevelPickerModal';
 import { encodeReplay } from '../replay/codec';
 import { replayOf, replayUrl } from '../replay/share';
 import { Timer } from '../components/Timer';
@@ -160,6 +160,26 @@ function DailyAttempt({
   const ai = useMemo(() => ({ level }), [level]);
   const session = useGameSession({ newGame, ai, humanSeat: HUMAN_SEAT, timed: true, maxUndos: 0 });
 
+  /**
+   * The Daily's bed follows the game rather than the route: the open cue over
+   * the early rounds, a tenser one from round five, and the closing swell —
+   * which does not loop — once the game is actually over.
+   *
+   * That last switch waits on the session's status, not on `game.isOver()`.
+   * The engine settles the final round the instant the last tile is committed,
+   * but the player is still watching that round being scored for several
+   * seconds afterwards; swapping the bed there cut the music out from under
+   * the scoring. `status` only turns over when the settlement animation has
+   * finished, so the last round keeps its own music until it is really done.
+   */
+  useMusic(
+    session.status === 'game-over'
+      ? 'daily-score'
+      : session.game.isOver() || session.displayState.round_num >= 5
+        ? 'daily-final'
+        : 'daily-early',
+  );
+
   const done = session.status === 'game-over' && session.error === null;
   const offered = useRef(false);
 
@@ -287,64 +307,15 @@ function DailyAttempt({
         title={`Daily Challenge (${puzzleId})`}
       />
 
-      {/* Difficulty Settings Modal */}
-      <Modal
+      <LevelPickerModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
-        title="Difficulty Settings"
-        maxWidth="max-w-md"
-      >
-        <div className="flex flex-col gap-3">
-          <p className="text-xs text-neutral-400">
-            Select the opponent difficulty for the Daily Challenge. Only {rankedLevelList()} games are posted to the leaderboard.
-          </p>
-          <div className="grid grid-cols-1 gap-2 pt-1">
-            {DAILY_LEVELS.map((candidate) => {
-              const isSelected = level === candidate;
-              return (
-                <button
-                  key={candidate}
-                  type="button"
-                  onClick={() => {
-                    onSelectLevel(candidate);
-                    setShowSettings(false);
-                  }}
-                  className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${
-                    isSelected
-                      ? 'border-sky-500 bg-sky-950/50 ring-1 ring-sky-500/50'
-                      : 'border-neutral-800 bg-neutral-900/60 hover:border-neutral-700 hover:bg-neutral-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {style !== 'focus' && <RobotAvatar level={candidate} className="h-10 w-10" />}
-                    <div className="flex flex-col gap-0.5">
-                      <span className={`text-sm font-semibold ${isSelected ? 'text-sky-300' : 'text-neutral-200'}`}>
-                        {LEVEL_LABELS[candidate]}
-                      </span>
-                      <span
-                        className={`text-[11px] font-medium ${
-                          isRanked(candidate) ? 'text-amber-300' : 'text-neutral-500'
-                        }`}
-                      >
-                        {isRanked(candidate) ? 'Ranked · goes on the board' : 'Not ranked'}
-                      </span>
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-neutral-950">
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current" fill="none" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              );
-
-            })}
-          </div>
-        </div>
-      </Modal>
-
+        levels={DAILY_LEVELS}
+        selected={level}
+        onSelect={onSelectLevel}
+        rankedOf={isRanked}
+        description={`Select the opponent difficulty for the Daily Challenge. Only ${rankedLevelList()} games are posted to the leaderboard.`}
+      />
     </div>
   );
 }

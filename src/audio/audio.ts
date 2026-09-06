@@ -32,7 +32,11 @@ export type SfxId =
   | 'lose'
   | 'ui';
 
-export type MusicId = 'menu' | 'game';
+/**
+ * A music cue, not a file: the Daily's three cues are three regions of one
+ * recording, so the bed can follow the game without a gap between downloads.
+ */
+export type MusicId = 'menu' | 'game' | 'daily-early' | 'daily-final' | 'daily-score';
 
 export interface SoundSettings {
   music: boolean;
@@ -40,7 +44,40 @@ export interface SoundSettings {
 }
 
 const SFX_URL = (id: SfxId) => `/audio/sfx/${id}.mp3`;
-const MUSIC_URL = (id: MusicId) => `/audio/music/${id}.mp3`;
+
+interface MusicCue {
+  /** The file this cue is cut from. */
+  file: string;
+  /** Where the cue starts, in seconds. */
+  start: number;
+  /** Where it ends, in seconds; the end of the file when omitted. */
+  end?: number;
+  /** Whether the region repeats. A cue that does not loop simply runs out. */
+  loop: boolean;
+  /**
+   * Overrides `MUSIC_XFADE` for this cue's loop seam. A cue cut out of a longer
+   * recording needs the full overlap to hide an arbitrary cut; a track that was
+   * authored as a loop only needs enough to soften the join, and every second
+   * of overlap is a second of the region that is never heard at full level.
+   */
+  xfade?: number;
+}
+
+/**
+ * The Daily's bed is one 2:12 cinematic cut into three regions: an open bed for
+ * the early rounds, a tenser one from round five, and the closing swell that
+ * plays once over the final scoring and is meant to end rather than repeat.
+ */
+const MUSIC_CUES: Record<MusicId, MusicCue> = {
+  menu: { file: 'menu', start: 0, loop: true },
+  // Authored as a loop, so the join only wants softening, not disguising.
+  game: { file: 'practice', start: 0, loop: true, xfade: 0.8 },
+  'daily-early': { file: 'daily', start: 0, end: 17, loop: true },
+  'daily-final': { file: 'daily', start: 68, end: 104, loop: true },
+  'daily-score': { file: 'daily', start: 110, loop: false },
+};
+
+const MUSIC_URL = (id: MusicId) => `/audio/music/${MUSIC_CUES[id].file}.mp3`;
 
 /** Per-sound trim, so one design does not have to be re-rendered to sit right. */
 const SFX_GAIN: Record<SfxId, number> = {
@@ -57,6 +94,31 @@ const SFX_GAIN: Record<SfxId, number> = {
 };
 
 const MUSIC_GAIN = 0.34;
+/**
+ * How long one loop's tail overlaps the next loop's head, in seconds, for a cue
+ * that does not set its own `xfade`.
+ *
+ * A plain `AudioBufferSourceNode` loop jumps from `loopEnd` straight back to
+ * `loopStart`, and unless the recording happens to be seamless there that jump
+ * is audible as a click or a lurch. Instead each pass is its own source and the
+ * passes overlap by this much, the outgoing one fading out on an equal-power
+ * curve as the incoming one fades in. The cost is that the region loses this
+ * much per pass; a second and a half is long enough to hide a seam in a
+ * sustained cinematic bed and short enough not to smear the pulse.
+ */
+const MUSIC_XFADE = 1.5;
+/** Points in the equal-power fade curves. Enough to sound smooth, not free. */
+const XFADE_STEPS = 33;
+
+const FADE_IN_CURVE = new Float32Array(XFADE_STEPS);
+const FADE_OUT_CURVE = new Float32Array(XFADE_STEPS);
+for (let i = 0; i < XFADE_STEPS; i++) {
+  const t = i / (XFADE_STEPS - 1);
+  // sin/cos rather than a straight line: two correlated copies of the same
+  // music summed linearly dip in the middle of the fade, and this does not.
+  FADE_IN_CURVE[i] = Math.max(Math.sin((t * Math.PI) / 2), 0.0001);
+  FADE_OUT_CURVE[i] = Math.max(Math.cos((t * Math.PI) / 2), 0.0001);
+}
 /** Two of the same one-shot inside this many ms is one sound, not two. */
 const DEDUPE_MS = 35;
 
@@ -76,7 +138,10 @@ class Audio {
   private loading = new Map<string, Promise<AudioBuffer | null>>();
 
   private current: MusicId | null = null;
-  private source: AudioBufferSourceNode | null = null;
+  /** Every music source currently sounding — two of them during a crossfade. */
+  private sources = new Set<AudioBufferSourceNode>();
+  /** Cancels the pending "schedule the next pass" timer when the bed changes. */
+  private loopTimer: ReturnType<typeof setTimeout> | null = null;
   /**
    * The bed the app wants playing, which is not the same as the one that is
    * playing: it survives the music being switched off, the context being
@@ -293,7 +358,7 @@ class Audio {
     // player is, which stays true whether or not it can be heard right now.
     this.requested = id;
     if (!this.settings.music) return;
-    if (this.current === id && this.source) return;
+    if (this.current === id && this.sources.size) return;
 
     const ctx = this.context();
     if (!ctx || !this.musicGain) return;
@@ -305,36 +370,101 @@ class Audio {
 
     const buffer = await this.load(MUSIC_URL(id));
     if (!buffer || !this.settings.music) return;
-    if (this.current === id && this.source) return;
+    if (this.current === id && this.sources.size) return;
 
     this.stopMusic({ fade: 0.6 });
 
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    src.loop = true;
-    src.connect(this.musicGain);
-    src.start();
-    this.source = src;
+    const cue = MUSIC_CUES[id];
+    const start = Math.min(cue.start, buffer.duration);
+    const end = Math.min(cue.end ?? buffer.duration, buffer.duration);
     this.current = id;
 
     const now = ctx.currentTime;
+    if (cue.loop) {
+      this.scheduleLoop(buffer, start, end, now, cue.xfade ?? MUSIC_XFADE);
+    } else {
+      // A one-shot cue: play the region once and stop. `current` is left set,
+      // so nothing re-starts it when the component re-renders.
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(this.musicGain);
+      src.start(now, start, Math.max(end - start, 0));
+      this.hold(src);
+    }
+
     this.musicGain.gain.cancelScheduledValues(now);
     this.musicGain.gain.setValueAtTime(0.0001, now);
     this.musicGain.gain.linearRampToValueAtTime(MUSIC_GAIN, now + 1.4);
   }
 
+  /** Keep a source until it ends, so `stopMusic` can always find it. */
+  private hold(src: AudioBufferSourceNode): void {
+    this.sources.add(src);
+    src.onended = () => {
+      this.sources.delete(src);
+    };
+  }
+
+  /**
+   * Play one pass of a looping cue at `at`, then arrange for the next one.
+   *
+   * Each pass covers the whole region, but the next starts `MUSIC_XFADE` before
+   * this one runs out, so the two overlap and the seam is crossfaded away
+   * instead of being cut. Passes are scheduled just ahead of time rather than
+   * all at once — the bed may be swapped at any moment, and a queue of sources
+   * already committed to the graph would have to be torn down again.
+   */
+  private scheduleLoop(
+    buffer: AudioBuffer,
+    start: number,
+    end: number,
+    at: number,
+    xfade: number,
+  ): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.musicGain) return;
+    const span = Math.max(end - start, 0.05);
+    // A region shorter than two crossfades would be nothing but crossfade.
+    const fade = Math.min(xfade, span / 2);
+
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const g = ctx.createGain();
+    g.gain.setValueCurveAtTime(FADE_IN_CURVE, at, fade);
+    g.gain.setValueAtTime(1, at + fade);
+    g.gain.setValueCurveAtTime(FADE_OUT_CURVE, at + span - fade, fade);
+    src.connect(g).connect(this.musicGain);
+    src.start(at, start, span);
+    this.hold(src);
+
+    // The audible period is one region minus the overlap.
+    const next = at + span - fade;
+    const lead = Math.max((next - ctx.currentTime - 0.5) * 1000, 0);
+    if (this.loopTimer) clearTimeout(this.loopTimer);
+    this.loopTimer = setTimeout(() => {
+      this.loopTimer = null;
+      if (this.current === null) return;
+      this.scheduleLoop(buffer, start, end, Math.max(next, ctx.currentTime), xfade);
+    }, lead);
+  }
+
   /** Fade the bed out and release it. Safe to call when nothing is playing. */
   stopMusic({ fade = 0.5 }: { fade?: number } = {}): void {
     const ctx = this.ctx;
-    const src = this.source;
-    this.source = null;
+    const sources = [...this.sources];
+    this.sources.clear();
     this.current = null;
+    if (this.loopTimer) {
+      clearTimeout(this.loopTimer);
+      this.loopTimer = null;
+    }
     if (!ctx || !this.musicGain) return;
     const now = ctx.currentTime;
     this.musicGain.gain.cancelScheduledValues(now);
     this.musicGain.gain.setValueAtTime(Math.max(this.musicGain.gain.value, 0.0001), now);
     this.musicGain.gain.linearRampToValueAtTime(0.0001, now + fade);
-    if (src) {
+    for (const src of sources) {
+      src.onended = null;
       try {
         src.stop(now + fade + 0.05);
       } catch {

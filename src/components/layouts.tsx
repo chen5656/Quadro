@@ -45,11 +45,12 @@ export function WideLayout({
       </div>
 
       {/*
-        Proportional columns, not fixed ones: the factories are ~10 tiles wide
-        just like a board, so the middle needs a real share of the width rather
-        than whatever the two boards leave behind.
+        Even thirds. The factories are ~10 tiles wide and so is a board, so the
+        middle earns a full share — but no more than one: the extra weight it
+        used to carry came straight out of the two boards, which are what you
+        actually read every turn.
       */}
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(340px,1.15fr)_minmax(0,1fr)] gap-3 sm:gap-4 lg:gap-6 items-start w-full justify-center mx-auto">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(320px,1fr)_minmax(0,1fr)] gap-3 sm:gap-4 lg:gap-6 items-start w-full justify-center mx-auto">
         <div className="flex flex-col gap-2.5 sm:gap-3 min-w-0 w-full justify-self-end">
           <div className="flex items-center justify-between gap-2 rounded-xl border border-neutral-700/60 bg-neutral-900/60 p-2.5 sm:p-3 shadow-sm backdrop-blur-sm min-h-[58px]">
             {opponentProfile}

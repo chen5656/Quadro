@@ -103,7 +103,9 @@ export function App() {
   const immersive = useLayoutMode() === 'stacked' && GAME_ROUTES.has(route);
   // Two beds, chosen by where the player is: the darker one over a board, the
   // open one everywhere else. Neither can start before the first gesture.
-  useMusic(GAME_ROUTES.has(route) ? 'game' : 'menu');
+  // The Daily is the exception — it scores itself round by round, so it asks
+  // for its own cues and this must not talk over them.
+  useMusic(route === '/daily' ? null : GAME_ROUTES.has(route) ? 'game' : 'menu');
 
   return (
     <div className="min-h-dvh">
