@@ -6,6 +6,21 @@
  * a soundtrack — the common case on a long game — is served by the same UI.
  */
 
+/**
+ * iOS silences Web Audio when the ring/silent switch is off. `audioSession`
+ * (Safari 17+) opts out of that, but on anything older the switches here can
+ * all be on and the phone still plays nothing — which reads as a broken game
+ * rather than a muted phone unless we say so.
+ */
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    // iPadOS 13+ reports itself as a Mac; the touch points give it away.
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 import { sfx, useSound } from '../audio';
 
 function Toggle({
@@ -75,6 +90,11 @@ export function SoundControl() {
       </div>
       <Toggle id="sound-music" label="Music" checked={music} onChange={setMusic} />
       <Toggle id="sound-sfx" label="Sound effects" checked={sfxOn} onChange={setSfx} />
+      {(music || sfxOn) && isIOS() && (
+        <p className="px-0.5 text-[10px] leading-snug text-neutral-600">
+          Silent on iPhone? Check the side ring/silent switch.
+        </p>
+      )}
     </div>
   );
 }

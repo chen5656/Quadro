@@ -49,9 +49,9 @@ export function DisplayScaleControl() {
   };
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-      <label htmlFor="display-scale-select" className="sr-only sm:not-sr-only text-neutral-400 font-medium">
-        Display
+    <div className="flex items-center justify-between gap-3 text-xs text-neutral-400">
+      <label htmlFor="display-scale-select" className="font-medium text-neutral-400">
+        Board size
       </label>
       <div className="relative">
         <select

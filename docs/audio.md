@@ -70,3 +70,24 @@ straight in as `public/audio/music/menu.mp3` or `game.mp3`. It should loop
 cleanly and be mastered quiet — the bed plays at 0.34 gain and is meant to sit
 under twenty minutes of thinking. Anything licensed rather than generated needs
 its attribution recorded here.
+
+## Silence, and why
+
+Three things have to be true before a browser makes a sound, and each has bitten
+this build once:
+
+- **A gesture.** The context is created suspended and armed on first load; the
+  first pointer or key event resumes it and starts the bed.
+- **A gesture the browser still believes in.** iOS only honours a `resume()`
+  issued synchronously inside the handler, so `play()` kicks the resume before
+  it awaits the fetch. Awaiting first put it on the far side of that boundary
+  and the sound was dropped.
+- **A phone that is not muted.** iOS silences Web Audio when the ring/silent
+  switch is off. `navigator.audioSession.type = 'playback'` (Safari 17+) opts
+  out; below that, nothing can, so the settings menu says so on iOS rather than
+  letting a muted phone read as a broken game.
+
+The bed a route asked for is remembered in `requested`, separately from what is
+actually playing. Turning music off and on again used to land in silence: the
+stop had cleared the current track, the route had not changed, and so nothing
+re-asked for it.

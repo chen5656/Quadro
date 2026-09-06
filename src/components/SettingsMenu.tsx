@@ -75,7 +75,7 @@ export function SettingsMenu() {
           />
           <div
             role="menu"
-            className="absolute right-0 z-[60] mt-2 w-56 rounded-lg border border-neutral-700 bg-neutral-900 p-3 shadow-xl"
+            className="absolute right-0 z-[60] mt-2 w-64 rounded-lg border border-neutral-700 bg-neutral-900 p-3 shadow-xl"
           >
           {showOpponent && (
             <div className="mb-3 border-b border-neutral-800 pb-3">
@@ -104,6 +104,9 @@ export function SettingsMenu() {
             </div>
           )}
           <div className="flex flex-col gap-2">
+            <span className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+              Appearance
+            </span>
             <GameStyleControl />
             <DisplayScaleControl />
           </div>

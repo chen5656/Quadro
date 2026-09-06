@@ -8,9 +8,13 @@ export function GameStyleControl() {
   };
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-      <label htmlFor="game-style-select" className="sr-only sm:not-sr-only text-neutral-400 font-medium">
-        Style
+    <div className="flex items-center justify-between gap-3 text-xs text-neutral-400">
+      {/*
+        Always visible, at every width. Hiding it below `sm` left a phone with a
+        bare "Classic" and nothing to say what it was choosing.
+      */}
+      <label htmlFor="game-style-select" className="font-medium text-neutral-400">
+        Tile style
       </label>
       <div className="relative">
         <select

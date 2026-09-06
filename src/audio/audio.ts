@@ -77,8 +77,14 @@ class Audio {
 
   private current: MusicId | null = null;
   private source: AudioBufferSourceNode | null = null;
-  /** Set while waiting for the first gesture, so we know what to start then. */
-  private pending: MusicId | null = null;
+  /**
+   * The bed the app wants playing, which is not the same as the one that is
+   * playing: it survives the music being switched off, the context being
+   * suspended before the first gesture, and everything else that stops sound
+   * without changing where the player is. Without it, switching music off and
+   * on again left silence — the route had not changed, so nothing re-asked.
+   */
+  private requested: MusicId | null = null;
   private armed = false;
   private lastPlayed = new Map<SfxId, number>();
   private failed = false;
@@ -103,7 +109,7 @@ class Audio {
     this.settings.music = on;
     storage.setSoundMusic(on ? 'on' : 'off');
     if (on) {
-      const want = this.pending ?? this.current;
+      const want = this.requested;
       this.current = null;
       if (want) void this.playMusic(want);
     } else {
@@ -142,6 +148,12 @@ class Audio {
         this.failed = true;
         return null;
       }
+      // Without this, iOS silences Web Audio whenever the ringer switch is
+      // off — the phone treats the page as ambient noise rather than something
+      // the player asked to hear. Safari 17+; harmless everywhere else.
+      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+      if (session) session.type = 'playback';
+
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
       this.master.gain.value = 1;
@@ -153,6 +165,9 @@ class Audio {
       this.failed = true;
       return null;
     }
+    // A context is born suspended. Arm the first-gesture handler now rather
+    // than waiting for something to fail, so the very first tap resumes it.
+    this.arm();
     return this.ctx;
   }
 
@@ -213,8 +228,10 @@ class Audio {
     const go = () => {
       void (async () => {
         if (!(await this.resume())) return;
-        const want = this.pending;
-        this.pending = null;
+        // The sounds a first-time player hits within a second of arriving.
+        // Loaded now so the tap after this one is not the one that waits.
+        for (const id of ['select', 'place', 'ui'] as SfxId[]) void this.load(SFX_URL(id));
+        const want = this.requested;
         if (want && this.settings.music) {
           this.current = null;
           await this.playMusic(want);
@@ -244,12 +261,17 @@ class Audio {
     if (now - last < DEDUPE_MS) return;
     this.lastPlayed.set(id, now);
 
+    const ctx = this.context();
+    if (!ctx || !this.master) return;
+    // Kicked synchronously, before anything is awaited: iOS only honours a
+    // resume that happens inside the gesture that triggered it, and awaiting
+    // the fetch first would put this on the far side of that boundary.
+    void this.resume();
+
     void (async () => {
-      const ctx = this.context();
-      if (!ctx || !this.master) return;
       const buffer = await this.load(SFX_URL(id));
-      if (!buffer || !this.settings.sfx) return;
-      if (!(await this.resume())) return;
+      if (!buffer || !this.settings.sfx || !this.master) return;
+      if (ctx.state !== 'running' && !(await this.resume())) return;
       const src = ctx.createBufferSource();
       src.buffer = buffer;
       src.playbackRate.value = rate;
@@ -267,17 +289,16 @@ class Audio {
    * nothing, so a component may call it on every render.
    */
   async playMusic(id: MusicId): Promise<void> {
-    if (!this.settings.music) {
-      // Remembered, so flipping music back on resumes the right bed.
-      this.pending = id;
-      return;
-    }
+    // Recorded first and unconditionally: this is the app saying where the
+    // player is, which stays true whether or not it can be heard right now.
+    this.requested = id;
+    if (!this.settings.music) return;
     if (this.current === id && this.source) return;
 
     const ctx = this.context();
     if (!ctx || !this.musicGain) return;
     if (!(await this.resume())) {
-      this.pending = id;
+      // Before the first gesture. `arm` will come back to this.
       this.arm();
       return;
     }
@@ -295,7 +316,6 @@ class Audio {
     src.start();
     this.source = src;
     this.current = id;
-    this.pending = null;
 
     const now = ctx.currentTime;
     this.musicGain.gain.cancelScheduledValues(now);
