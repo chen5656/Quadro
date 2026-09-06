@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { Spotlight, Step } from '../tutorial/script';
-import { OPPONENT_LABEL } from '../tutorial/script';
 import type { Phase } from '../tutorial/useTutorial';
 import { Link } from '../router';
 
@@ -119,33 +118,32 @@ export function TutorialPopover({
       style={
         isCenter
           ? {
-              position: 'fixed',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 30,
-            }
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 30,
+          }
           : {
-              position: 'fixed',
-              left: `${coords.x}px`,
-              top: `${coords.y}px`,
-              zIndex: 30,
-            }
+            position: 'fixed',
+            left: `${coords.x}px`,
+            top: `${coords.y}px`,
+            zIndex: 30,
+          }
       }
       className="fixed z-30 w-[calc(100vw-24px)] max-w-sm rounded-xl bg-neutral-900 p-4 text-neutral-100 shadow-[0_18px_48px_rgba(0,0,0,0.45)] transition-[left,top] duration-200 ease-out"
     >
       {/* Arrow Indicator when anchored next to a target */}
       {!isCenter && coords && (
         <div
-          className={`absolute pointer-events-none w-3 h-3 bg-neutral-900 transform rotate-45 ${
-            coords.placement === 'right'
-              ? '-left-1.5 top-1/2 -translate-y-1/2'
-              : coords.placement === 'left'
+          className={`absolute pointer-events-none w-3 h-3 bg-neutral-900 transform rotate-45 ${coords.placement === 'right'
+            ? '-left-1.5 top-1/2 -translate-y-1/2'
+            : coords.placement === 'left'
               ? '-right-1.5 top-1/2 -translate-y-1/2'
               : coords.placement === 'top'
-              ? '-bottom-1.5 left-1/2 -translate-x-1/2'
-              : '-top-1.5 left-1/2 -translate-x-1/2'
-          }`}
+                ? '-bottom-1.5 left-1/2 -translate-x-1/2'
+                : '-top-1.5 left-1/2 -translate-x-1/2'
+            }`}
         />
       )}
 
@@ -165,30 +163,16 @@ export function TutorialPopover({
         </span>
       </div>
 
-      <div className="mt-2 space-y-1.5 text-sm leading-5 text-neutral-300">
+      <ul className="mt-2.5 space-y-1.5 text-sm leading-5 text-neutral-300">
         {body.map((paragraph, i) => (
-          <p key={i}>{paragraph}</p>
+          <li key={i} className="flex items-start gap-2">
+            <span className="text-sky-400 select-none font-semibold text-base leading-5">➛</span>
+            <span className="flex-1 leading-snug">{paragraph}</span>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          {!canAdvance && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-300">
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-              <span className="truncate">
-                {phase === 'replying'
-                  ? `${OPPONENT_LABEL} is answering…`
-                  : phase === 'pick'
-                  ? 'Click highlighted tokens to take.'
-                  : 'Click highlighted context line to place.'}
-              </span>
-            </span>
-          )}
-        </div>
-
+      <div className="mt-4 flex items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           {done ? (
             <>

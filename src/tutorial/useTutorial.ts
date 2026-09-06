@@ -218,9 +218,13 @@ export function useTutorial(): Tutorial {
 
   const spotlight: Spotlight | undefined = useMemo(() => {
     if (step.kind === 'talk') return step.spotlight;
-    if (phase === 'pick') return { kind: 'source', index: step.source };
-    if (phase === 'place' || phase === 'replying' || phase === 'after') {
-      return step.dest === 5 ? { kind: 'floor' } : { kind: 'row', index: step.dest };
+    const move = step as MoveStep;
+    if (phase === 'pick') return { kind: 'source', index: move.source };
+    if (phase === 'place' || phase === 'replying') {
+      return move.dest === 5 ? { kind: 'floor' } : { kind: 'row', index: move.dest };
+    }
+    if (phase === 'after') {
+      return move.afterSpotlight ?? (move.dest === 5 ? { kind: 'floor' } : { kind: 'row', index: move.dest });
     }
     return undefined;
   }, [phase, step]);

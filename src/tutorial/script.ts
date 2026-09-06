@@ -61,6 +61,8 @@ export interface MoveStep {
   place: string[];
   /** Shown after the move has landed and the opponent has answered. */
   after: string[];
+  /** Spotlight target during the 'after' review phase, if different from the placed row. */
+  afterSpotlight?: Spotlight;
 }
 
 export type Step = TalkStep | MoveStep;
@@ -70,7 +72,8 @@ export const STEPS: Step[] = [
     kind: 'talk',
     title: 'See the board',
     body: [
-      'Pick tokens from the five attention nodes or the buffer. Place them into the context lines on your board.',
+      'Take turns picking tokens from nodes or the buffer.',
+      'A round ends and refills only after all tokens are drafted.',
     ],
     spotlight: { kind: 'source', index: 1 },
   },
@@ -81,14 +84,16 @@ export const STEPS: Step[] = [
     color: RED,
     dest: 2,
     pick: [
-      'Take all three red tokens from Attention 2.',
+      'Take 3 red tokens from Attention 2.',
     ],
     place: [
-      'Place them in context line 3. They fit exactly.',
+      'Place them in context line 3 (exact fit).',
     ],
     after: [
-      'Context line 3 is full. The tokens you left moved to the buffer.',
+      'Context line 3 is full.',
+      'Leftover tokens move to the buffer.',
     ],
+    afterSpotlight: { kind: 'source', index: CENTER },
   },
   {
     kind: 'move',
@@ -97,14 +102,16 @@ export const STEPS: Step[] = [
     color: YELLOW,
     dest: 1,
     pick: [
-      'Take the yellow token from the buffer.',
+      'Take yellow from the buffer.',
     ],
     place: [
       'Place it in context line 2.',
     ],
     after: [
-      'The first player to draw from the buffer takes the initiative (“1”) marker: −1 point on your hallucination line, but you lead next round.',
+      'First to draw buffer takes the “1” marker.',
+      '−1 pt penalty, but you lead next round.',
     ],
+    afterSpotlight: { kind: 'floor' },
   },
   {
     kind: 'move',
@@ -113,14 +120,16 @@ export const STEPS: Step[] = [
     color: YELLOW,
     dest: 1,
     pick: [
-      'Take both yellow tokens from Attention 5.',
+      'Take 2 yellow tokens from Attention 5.',
     ],
     place: [
-      'Place them in context line 2. Only one fits.',
+      'Place in context line 2 (only 1 fits).',
     ],
     after: [
-      'The extra token spills into your hallucination line. Avoid overflow when you can.',
+      'Extra token spills into hallucination line.',
+      'Avoid overflow to save points.',
     ],
+    afterSpotlight: { kind: 'floor' },
   },
   {
     kind: 'move',
@@ -128,13 +137,15 @@ export const STEPS: Step[] = [
     source: CENTER,
     color: WHITE,
     dest: 4,
-    pick: ['Take both white tokens from the buffer.'],
+    pick: ['Take 2 white tokens from buffer.'],
     place: [
-      'Place them in context line 5. It does not need to fill this round.',
+      'Place in line 5 (no need to fill now).',
     ],
     after: [
-      'Unfinished context lines stay for the next round. From now on, this line only takes white.',
+      'Unfinished lines carry over to next round.',
+      'Locked to white until completed.',
     ],
+    afterSpotlight: { kind: 'row', index: 4 },
   },
   {
     kind: 'move',
@@ -142,11 +153,13 @@ export const STEPS: Step[] = [
     source: 2,
     color: GREEN,
     dest: 3,
-    pick: ['Take the green token from Attention 3.'],
+    pick: ['Take 1 green token from Attention 3.'],
     place: ['Start context line 4 with it.'],
     after: [
-      'The three tokens you left moved to the buffer, where your rival could take them.',
+      '3 leftover tokens moved to the buffer.',
+      'Rival can now take them.',
     ],
+    afterSpotlight: { kind: 'source', index: CENTER },
   },
   {
     kind: 'move',
@@ -155,33 +168,41 @@ export const STEPS: Step[] = [
     color: YELLOW,
     dest: 0,
     pick: [
-      'Take the last yellow token from the buffer.',
+      'Take last yellow from the buffer.',
     ],
-    place: ['Place it in context line 1 to fill the line.'],
+    place: ['Place in line 1 to fill it.'],
     after: [
-      'The round ends. Full context lines crystallize one token onto your memory grid; the hallucination line costs you points.',
+      'All tokens on the table are drafted — round ends!',
+      'Full lines crystallize onto memory grid, excess deducts pts.',
+      'A new round will refill 4 tokens on each attention node.',
     ],
+    afterSpotlight: { kind: 'wall' },
   },
   {
     kind: 'talk',
     title: 'Score memory clusters',
     spotlight: { kind: 'wall' },
     body: [
-      'A token scores 1 alone, or the length of the row and column it joins in your memory grid. Build connected clusters.',
+      '1 pt alone, or length of connected row/col.',
+      'Build connected clusters for high scores.',
     ],
   },
   {
     kind: 'talk',
     title: 'Convergence',
     body: [
-      'The game ends when anyone fills a row on their memory grid. Bonuses: +2 per row, +7 per column, +10 per complete color.',
+      'Game ends when any row is completed.',
+      'Bonuses: +2/row, +7/col, +10/full color.',
     ],
   },
   {
     kind: 'talk',
     title: 'You’re ready',
     body: [
-      'Pick one color frequency. Fill context lines. Build memory clusters. Keep tokens off your hallucination line.',
+      'Pick one color group.',
+      'Fill context lines.',
+      'Build memory clusters.',
+      'Avoid hallucination penalties.',
     ],
   },
 ];
