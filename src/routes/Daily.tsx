@@ -161,25 +161,8 @@ function DailyAttempt({
   const ai = useMemo(() => ({ level }), [level]);
   const session = useGameSession({ newGame, ai, humanSeat: HUMAN_SEAT, timed: true, maxUndos: 0 });
 
-  /**
-   * The Daily's bed follows the game rather than the route: the open cue over
-   * the early rounds, a tenser one from round five, and the closing swell —
-   * which does not loop — once the game is actually over.
-   *
-   * That last switch waits on the session's status, not on `game.isOver()`.
-   * The engine settles the final round the instant the last tile is committed,
-   * but the player is still watching that round being scored for several
-   * seconds afterwards; swapping the bed there cut the music out from under
-   * the scoring. `status` only turns over when the settlement animation has
-   * finished, so the last round keeps its own music until it is really done.
-   */
-  useMusic(
-    session.status === 'game-over'
-      ? 'daily-score'
-      : session.game.isOver() || session.displayState.round_num >= 5
-        ? 'daily-final'
-        : 'daily-early',
-  );
+  // One looping bed for the whole attempt, early rounds through final scoring.
+  useMusic('daily');
 
   const done = session.status === 'game-over' && session.error === null;
   const offered = useRef(false);

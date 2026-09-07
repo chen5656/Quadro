@@ -24,7 +24,7 @@ npm run audio:build   # needs ffmpeg on PATH
 | `sfx/ui.mp3` | Buttons and toggles. |
 | `music/menu.mp3` | Home, leaderboards, results — anything that is not a board. |
 | `music/practice.mp3` | Practice and the tutorial. One 37 s guitar loop, the whole way through — no phases. Licensed. |
-| `music/daily.mp3` | The Daily only, cut into three cues (below). Licensed. |
+| `music/daily.mp3` | The Daily only, one looping cue (below). Licensed. |
 
 `menu.mp3` is generated and loops seamlessly in the file itself: the renderer
 runs six seconds past the loop point and folds the tail back over the head
@@ -48,23 +48,13 @@ region, since the overlap is time never heard at full level. `practice.mp3` was
 authored as a loop and its ends already meet, so it uses 0.8 s — enough to
 soften the join and no more.
 
-## The Daily's three cues
+## The Daily's cue
 
-`daily.mp3` is one 2:12 recording, and `MUSIC_CUES` in `src/audio/audio.ts` cuts
-three regions out of it so the bed can follow the game without a gap between
-downloads. Regions that loop are crossfaded in the player (`MUSIC_XFADE`) rather
-than in the file, since the cut points are not seamless.
-
-| Cue | Region | When it plays |
-| --- | --- | --- |
-| `daily-early` | 0–17 s, loops | Rounds one to four. |
-| `daily-final` | 68–104 s, loops | From round five, and through the final round's scoring. |
-| `daily-score` | 110 s to the end, once | The game over screen. Meant to end rather than repeat. |
-
-The swap to `daily-score` waits on `session.status === 'game-over'`, not on
-`game.isOver()`: the engine settles the last round the moment the final tile is
-committed, but the player watches that round score for several seconds after,
-and switching there cut the music out from under the scoring.
+`daily.mp3` is a 27-second region (27 s–54 s of the source recording) that loops
+for the whole attempt — first round through the final scoring — under the single
+`daily` cue. The cut points are not seamless, so the loop seam is crossfaded in
+the player at the full `MUSIC_XFADE`, and the bed fades in over 1.4 s when it
+starts and out over 0.6 s when it is replaced.
 
 ## Wiring
 
@@ -107,7 +97,8 @@ The loader only cares about the path, so a hand-picked track can be dropped
 straight in as `public/audio/music/menu.mp3`, `practice.mp3` or `daily.mp3`. It
 should loop cleanly and be mastered quiet — the bed plays at 0.34 gain and is
 meant to sit under twenty minutes of thinking. A replacement for `daily.mp3`
-also has to have three regions worth cutting; adjust `MUSIC_CUES` to match.
+is trimmed to its loop region before it is dropped in; adjust `MUSIC_CUES` if
+the region does not start at 0.
 Anything licensed rather than generated needs its attribution recorded under
 [Credits](#credits), and the entry in the README kept in step.
 
@@ -115,7 +106,7 @@ Anything licensed rather than generated needs its attribution recorded under
 
 | File | Track | Author | Source | License |
 | --- | --- | --- | --- | --- |
-| `music/daily.mp3` | Inspiring Cinematic Music | Tunetank | [Pixabay](https://pixabay.com/music/main-title-inspiring-cinematic-music-409347/) | Pixabay Content License |
+| `music/daily.mp3` | Wonders of the Earth | Grand_Project | [Pixabay](https://pixabay.com/music/) | Pixabay Content License |
 | `music/practice.mp3` | Relaxing Guitar Loop V5 | Idoberg (idoberg) | [Pixabay](https://pixabay.com/sound-effects/musical-relaxing-guitar-loop-v5-245859/) | Pixabay Content License |
 
 `practice.mp3` is the source track at half tempo (`ffmpeg -af

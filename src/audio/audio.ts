@@ -36,7 +36,7 @@ export type SfxId =
  * A music cue, not a file: the Daily's three cues are three regions of one
  * recording, so the bed can follow the game without a gap between downloads.
  */
-export type MusicId = 'menu' | 'game' | 'daily-early' | 'daily-final' | 'daily-score';
+export type MusicId = 'menu' | 'game' | 'daily';
 
 export interface SoundSettings {
   music: boolean;
@@ -64,17 +64,15 @@ interface MusicCue {
 }
 
 /**
- * The Daily's bed is one 2:12 cinematic cut into three regions: an open bed for
- * the early rounds, a tenser one from round five, and the closing swell that
- * plays once over the final scoring and is meant to end rather than repeat.
+ * The Daily's bed is one 27-second region cut out of a longer cinematic, and it
+ * plays unbroken from the first round through the final scoring.
  */
 const MUSIC_CUES: Record<MusicId, MusicCue> = {
   menu: { file: 'menu', start: 0, loop: true },
   // Authored as a loop, so the join only wants softening, not disguising.
   game: { file: 'practice', start: 0, loop: true, xfade: 0.8 },
-  'daily-early': { file: 'daily', start: 0, end: 17, loop: true },
-  'daily-final': { file: 'daily', start: 68, end: 104, loop: true },
-  'daily-score': { file: 'daily', start: 110, loop: false },
+  // Cut out of a longer recording, so the seam needs the full overlap to hide.
+  daily: { file: 'daily', start: 0, loop: true },
 };
 
 const MUSIC_URL = (id: MusicId) => `/audio/music/${MUSIC_CUES[id].file}.mp3`;
