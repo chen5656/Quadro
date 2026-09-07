@@ -1,7 +1,7 @@
 ---
 title: The Story — The Mirror Link Protocol
 description: The lore behind NODRA: a high-stakes duel between human consciousness and a synthetic replica over memory, attention, and sanity.
-updated: 2026-09-05
+updated: 2026-09-07
 ---
 
 > *"If it remembers everything you felt, and you forget what made you real... which one of you wakes up tomorrow?"*

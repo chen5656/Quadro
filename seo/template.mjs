@@ -104,6 +104,31 @@ th{background:var(--panel);font-weight:600}
   border-top:1px solid var(--line)}
 .next a{border:1px solid var(--line);border-radius:.5rem;padding:.45rem .75rem;font-size:.9375rem}
 .meta{color:var(--dim);font-size:.8125rem;margin-top:2rem}
+.story-comic{width:min(72rem,calc(100vw - 2rem));margin:1.75rem 0 2.5rem 50%;transform:translateX(-50%)}
+.story-hook{max-width:42rem;margin:0 auto 2rem;color:#d4d4d4;font-size:clamp(1.15rem,2.5vw,1.6rem);
+  line-height:1.5;text-align:center;text-wrap:balance}
+.story-panel{margin:0 0 clamp(2rem,6vw,4.5rem);background:#101416;border:1px solid #28343a;
+  border-radius:.9rem;overflow:hidden;box-shadow:0 1.5rem 5rem rgba(0,0,0,.3)}
+.story-panel img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:#0c1012}
+.story-panel figcaption{display:grid;grid-template-columns:minmax(9rem,.32fr) 1fr;gap:1rem 2rem;
+  padding:1rem 1.25rem 1.2rem;border-top:1px solid #28343a;background:#111619}
+.story-panel figcaption span{color:#7dd3fc;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.story-panel figcaption p{margin:0;color:#d4dde1;font-size:clamp(.95rem,1.8vw,1.12rem);line-height:1.55}
+.story-ending{text-align:center;margin:0 auto 3rem}
+.story-ending p{color:#d4d4d4;font-size:1.1rem}
+.story-ending a{display:inline-flex;align-items:center;gap:.8rem;padding:.75rem 1.1rem;border-radius:.5rem;
+  background:#7dd3fc;color:#08202c;font-size:.9rem;font-weight:700;text-decoration:none}
+.story-ending a:hover{background:#bae6fd;text-decoration:none}
+.story-transcript{border:1px solid var(--line);border-radius:.75rem;background:var(--panel);overflow:hidden}
+.story-transcript summary{cursor:pointer;padding:1rem;color:#d4d4d4;font-weight:600}
+.story-transcript summary:hover{color:#fff;background:#19191d}
+.story-transcript-body{padding:0 1rem 1rem;border-top:1px solid var(--line)}
+.story-transcript-body h2:first-of-type{margin-top:1.25rem}
+@media (max-width:40rem){
+  .story-comic{width:calc(100vw - 1rem)}
+  .story-panel{border-radius:.5rem;margin-bottom:2rem}
+  .story-panel figcaption{grid-template-columns:1fr;gap:.4rem;padding:.85rem 1rem 1rem}
+}
 .site-footer{margin-top:2rem;border-top:1px solid #262626}
 .site-footer .bar{max-width:80rem;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:1rem .25rem;padding:1rem;font-size:.75rem;color:#737373}
 .site-footer a{color:#737373;text-decoration:none;margin-left:.75rem}
