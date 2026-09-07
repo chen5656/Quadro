@@ -17,7 +17,8 @@ export type Route =
   | '/leaderboard/today'
   /** `/leaderboard/YYYY-MM-DD`; the date arrives in `params.date`. */
   | '/leaderboard/date'
-  | '/replay'
+  /** `/r/<code>`; the replay code arrives in `params.code`. */
+  | '/r'
   | '/history';
 
 const ROUTES: Route[] = [
@@ -27,21 +28,30 @@ const ROUTES: Route[] = [
   '/practice',
   '/leaderboard',
   '/leaderboard/today',
-  '/replay',
   '/history',
 ];
 
 export interface RouteParams {
   /** `YYYY-MM-DD`, on the dated leaderboard only. */
   date?: string;
+  /** The base64url replay code, on `/r/<code>` only. */
+  code?: string;
 }
 
 const DATED_BOARD = /^\/leaderboard\/(\d{4}-\d{2}-\d{2})$/;
+/**
+ * `/r/<code>`. The code sits in the path rather than the fragment so the
+ * Worker can decode it and answer a link preview with this game's score
+ * (`worker/share.ts`); a fragment never reaches the server.
+ */
+const SHARED_REPLAY = /^\/r\/([A-Za-z0-9_-]+)$/;
 
 function normalize(pathname: string): { route: Route; params: RouteParams } {
   const trimmed = pathname.replace(/\/+$/, '') || '/';
   const dated = DATED_BOARD.exec(trimmed);
   if (dated) return { route: '/leaderboard/date', params: { date: dated[1] } };
+  const shared = SHARED_REPLAY.exec(trimmed);
+  if (shared) return { route: '/r', params: { code: shared[1] } };
   return { route: (ROUTES.find((r) => r === trimmed) ?? '/') as Route, params: {} };
 }
 
@@ -70,7 +80,7 @@ const ROUTE_TITLES: Record<Route, string> = {
   '/leaderboard': 'Leaderboard — QUADRO Daily',
   '/leaderboard/today': 'Leaderboard — QUADRO Daily',
   '/leaderboard/date': 'Leaderboard — QUADRO Daily',
-  '/replay': 'Replay — QUADRO',
+  '/r': 'Replay — QUADRO',
   '/history': 'Match History — QUADRO',
 };
 

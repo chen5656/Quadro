@@ -1,5 +1,5 @@
 /**
- * `/replay#<code>` end to end.
+ * `/r/<code>` end to end.
  *
  * The point of these is that the replay is drawn by the *real* board: the page
  * decodes a code, rebuilds the position with the engine and hands it to
@@ -58,8 +58,8 @@ function codeForGame(engineVersion = ENGINE_VERSION) {
   };
 }
 
-function renderAt(hash: string) {
-  window.history.pushState({}, '', `/replay#${hash}`);
+function renderAt(code: string) {
+  window.history.pushState({}, '', `/r/${code}`);
   return render(
     <RouterProvider>
       <ReplayPage />

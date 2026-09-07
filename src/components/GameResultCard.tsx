@@ -46,6 +46,16 @@ export interface GameResultCardProps {
   submissionState?: SubmissionState;
   /** Whether the game difficulty was ranked */
   ranked?: boolean;
+  /**
+   * The share payload for this game: a link that replays it, plus the recap
+   * line that goes next to the link.
+   *
+   * Passed in rather than derived here, because only the route holds the
+   * `QuadroGame` the replay is encoded from. Absent means the game could not
+   * be encoded (absurdly long), and the share control is hidden rather than
+   * offering a link to nothing.
+   */
+  share?: { url: string; text: string } | null;
   onPlayAgain: () => void;
   onWatchReplay?: () => void;
   onBack?: () => void;
@@ -91,6 +101,7 @@ export function GameResultCard({
   breakdown,
   submissionState,
   ranked = isRankedLevel(aiLevel),
+  share = null,
   onPlayAgain,
   onWatchReplay,
   onBack,
@@ -161,11 +172,11 @@ export function GameResultCard({
   );
 
   const handleShareClick = async () => {
-    const verdict = draw ? 'drew with' : humanWon ? 'beat' : 'lost to';
+    if (!share) return;
     const shareData = {
-      title: 'QUADRO — Daily Challenge',
-      text: `I ${verdict} ${opponentName} ${humanScore}–${opponentScore} in ${timeFormatted} on QUADRO!`,
-      url: window.location.href,
+      title: 'NODRA — Daily Challenge',
+      text: share.text,
+      url: share.url,
     };
     if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.(shareData)) {
       try {
@@ -175,10 +186,17 @@ export function GameResultCard({
         // Share dismissed or failed, fallback to copy
       }
     }
+    // Only claim the link was copied once the write has actually resolved: a
+    // refused clipboard used to leave the button saying "Copied!" over an
+    // empty clipboard.
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      void navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        await navigator.clipboard.writeText(`${share.text}\n${share.url}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Nothing to say beyond leaving the button as it was.
+      }
     }
   };
 
@@ -227,25 +245,27 @@ export function GameResultCard({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleShareClick}
-          title="Share this result"
-          className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-xs font-medium text-neutral-200 shadow-sm transition hover:bg-neutral-800 hover:text-white sm:text-sm"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-3.5 w-3.5 stroke-current"
-            fill="none"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {share && (
+          <button
+            type="button"
+            onClick={handleShareClick}
+            title="Share this result"
+            className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-xs font-medium text-neutral-200 shadow-sm transition hover:bg-neutral-800 hover:text-white sm:text-sm"
           >
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-          </svg>
-          <span>{copied ? 'Copied!' : 'Share result'}</span>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              className="h-3.5 w-3.5 stroke-current"
+              fill="none"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span>{copied ? 'Copied!' : 'Share result'}</span>
+          </button>
+        )}
       </div>
 
       <div

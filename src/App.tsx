@@ -138,7 +138,7 @@ export function App() {
         {(route === '/leaderboard' ||
           route === '/leaderboard/today' ||
           route === '/leaderboard/date') && <LeaderboardPage />}
-        {route === '/replay' && <ReplayPage />}
+        {route === '/r' && <ReplayPage />}
         {route === '/history' && <HistoryPage />}
       </main>
 

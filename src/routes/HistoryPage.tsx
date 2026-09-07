@@ -6,14 +6,17 @@
  * client that sends its replay get a Watch link; older rows simply do not.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { LEVEL_LABELS, type AgentLevel } from '../ai';
 import { ApiError, type HistoryEntry, getHistory } from '../api/client';
 import { RobotAvatar } from '../components/RobotAvatar';
 import { useIdentity } from '../auth';
 import { useGameStyle } from '../context/GameStyleContext';
-import { REPLAY_PATH, formatDuration } from '../replay/share';
+import { decodeReplay } from '../replay/codec';
+import { ENGINE_VERSION } from '../replay/version';
+import { ShareButton } from '../components/ShareButton';
+import { formatDuration, recapText, replayHref } from '../replay/share';
 import { Link } from '../router';
 
 type Load = 'loading' | 'ready' | 'signed-out' | 'error';
@@ -135,6 +138,28 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
   const label = LEVEL_LABELS[level] ?? entry.ai_level;
   const won = entry.margin > 0;
 
+  /**
+   * Decoded rather than rebuilt from the row's own numbers, so the recap a
+   * player pastes is produced by the same function as everywhere else and
+   * cannot drift from it.
+   */
+  const share = useMemo(() => {
+    if (!entry.replay) return null;
+    try {
+      const replay = decodeReplay(entry.replay, ENGINE_VERSION);
+      return {
+        url: `${window.location.origin}${replayHref(entry.replay)}`,
+        text: recapText(replay, {
+          levelLabel: label,
+          elapsedMs: entry.elapsed_ms,
+          rank: entry.rank,
+        }),
+      };
+    } catch {
+      return null;
+    }
+  }, [entry.replay, entry.elapsed_ms, entry.rank, label]);
+
   return (
     <li className="flex flex-wrap items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
       {style !== 'focus' && <RobotAvatar level={level} className="h-8 w-8 shrink-0" />}
@@ -167,12 +192,15 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
       </div>
 
       {entry.replay ? (
-        <Link
-          to={`${REPLAY_PATH}#${entry.replay}`}
-          className="cursor-pointer rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
-        >
-          Watch
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            to={replayHref(entry.replay)}
+            className="cursor-pointer rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
+          >
+            Watch
+          </Link>
+          {share && <ShareButton url={share.url} text={share.text} />}
+        </div>
       ) : (
         // Rows posted before replays existed have nothing to play back. Saying
         // so beats a dead button.

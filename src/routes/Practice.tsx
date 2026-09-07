@@ -17,7 +17,7 @@ import { RobotAvatar } from '../components/RobotAvatar';
 import { useGameStyle } from '../context/GameStyleContext';
 import { useGameSession } from '../game/useGameSession';
 import { PRACTICE_LEVELS, practiceHrefFor, resolvePracticeLevel } from '../practice/levels';
-import { replayOf, replayUrl } from '../replay/share';
+import { shareFor } from '../replay/share';
 import { storage } from '../storage';
 import { useRouter } from '../router';
 
@@ -221,6 +221,21 @@ function PracticeGame({
   const { search, navigate } = useRouter();
   const result = session.status === 'game-over' ? session.game.result() : null;
 
+  /** The link and recap for the game just finished; null while one is running. */
+  const share = useMemo(
+    () =>
+      session.status === 'game-over'
+        ? shareFor(
+            session.game,
+            { aiLevel: setup.level, humanSeat: session.humanSeat, puzzleId: null },
+            { levelLabel: LEVEL_LABELS[setup.level] ?? setup.level, elapsedMs: session.elapsedMs },
+          )
+        : null,
+    // The game object is mutated in place, so the status edge is the trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session.status, setup.level, session.humanSeat],
+  );
+
   return (
     <div className="flex w-full flex-col gap-3">
       {result && style !== 'focus' && (
@@ -236,19 +251,8 @@ function PracticeGame({
           onPlayAgain={session.restart}
           onBack={onExit}
           backLabel="Change setup"
-          onWatchReplay={() => {
-            try {
-              const replay = replayOf(session.game, {
-                aiLevel: setup.level,
-                humanSeat: session.humanSeat,
-                puzzleId: null,
-              });
-              const url = replayUrl(replay);
-              window.open(url, '_blank');
-            } catch {
-              // Replay encoding failed
-            }
-          }}
+          share={share}
+          onWatchReplay={share ? () => window.open(share.url, '_blank') : undefined}
           onSwitchToRanked={() => navigate('/daily?ai=expert')}
         />
       )}

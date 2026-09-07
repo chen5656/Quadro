@@ -18,7 +18,7 @@ import { GameResultCard } from '../components/GameResultCard';
 import { matchBreakdown } from '../game/breakdown';
 import { LevelPickerModal } from '../components/LevelPickerModal';
 import { encodeReplay } from '../replay/codec';
-import { replayOf, replayUrl } from '../replay/share';
+import { replayOf, shareFor } from '../replay/share';
 import { Timer } from '../components/Timer';
 import { useGameStyle } from '../context/GameStyleContext';
 import { HUMAN_SEAT, newDailyGame, puzzleIdFor } from '../daily/puzzle';
@@ -216,6 +216,24 @@ function DailyAttempt({
     if (submission.state.kind === 'posted') setBoardRefresh((n) => n + 1);
   }, [submission.state.kind]);
 
+  /**
+   * The link and recap for the game just finished. Rebuilt only when the game
+   * ends, so the encode does not run on every render of a live board.
+   */
+  const share = useMemo(
+    () =>
+      session.status === 'game-over'
+        ? shareFor(
+            session.game,
+            { aiLevel: level, humanSeat: HUMAN_SEAT, puzzleId },
+            { levelLabel: LEVEL_LABELS[level] ?? level, elapsedMs: session.elapsedMs },
+          )
+        : null,
+    // The game object is mutated in place, so the status edge is the trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session.status, level, puzzleId],
+  );
+
   const handleUndo = () => {
     submission.reset();
     offered.current = false;
@@ -266,15 +284,8 @@ function DailyAttempt({
           onPlayAgain={onPlayAgain}
           onBack={() => navigate('/')}
           backLabel="Back to Home"
-          onWatchReplay={() => {
-            try {
-              const replay = replayOf(session.game, { aiLevel: level, humanSeat: HUMAN_SEAT, puzzleId });
-              const url = replayUrl(replay);
-              window.open(url, '_blank');
-            } catch {
-              // Replay encoding failed
-            }
-          }}
+          share={share}
+          onWatchReplay={share ? () => window.open(share.url, '_blank') : undefined}
           onSwitchToRanked={() => onSelectLevel(RANKED_LEVEL)}
           onRetrySubmit={() => void submission.retry()}
           onDiscardSubmit={submission.discard}

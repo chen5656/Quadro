@@ -106,21 +106,6 @@ export const APP_ROUTES = [
     },
   },
   {
-    path: '/replay',
-    title: 'Replay — QUADRO',
-    description:
-      'Watch a turn-by-turn replay of a QUADRO match.',
-    prose: {
-      h1: 'Match Replay',
-      lead:
-        'Watch a full turn-by-turn reconstructed replay of a completed QUADRO consciousness duel.',
-      links: [
-        ['/daily', "Play today's daily puzzle"],
-        ['/practice', 'Practice against AI'],
-      ],
-    },
-  },
-  {
     path: '/history',
     title: 'Match History — QUADRO',
     description:

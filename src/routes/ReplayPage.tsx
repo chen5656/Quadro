@@ -1,10 +1,13 @@
 /**
- * `/replay#<code>` — watching a recorded game.
+ * `/r/<code>` — watching a recorded game.
  *
- * The whole game lives in the fragment, so this page needs no account, no
- * network call and no database row: it decodes the code, rebuilds the position
- * with the engine, and hands the result to the *real* `Board`. What a viewer
+ * The whole game lives in the URL, so this page needs no account, no network
+ * call and no database row: it decodes the code, rebuilds the position with
+ * the engine, and hands the result to the *real* `Board`. What a viewer
  * watches is drawn by the same components that drew it when it was played.
+ *
+ * This is the page most links point at, so it is also where a stranger meets
+ * the game: the header's call to action sends them at the same deal.
  */
 
 import { useMemo } from 'react';
@@ -15,22 +18,25 @@ import { RobotAvatar } from '../components/RobotAvatar';
 import { useGameStyle } from '../context/GameStyleContext';
 import { useReplaySession } from '../game/useReplaySession';
 import { ReplayDecodeError, decodeReplay, type Replay } from '../replay/codec';
-import { formatDuration, recapText } from '../replay/share';
+import { ShareButton } from '../components/ShareButton';
+import { puzzleIdFor, seedForPuzzle } from '../daily/puzzle';
+import { formatDuration, recapText, replayHref } from '../replay/share';
 import { ENGINE_VERSION } from '../replay/version';
 import { Link, useRouter } from '../router';
 
 export function ReplayPage() {
-  const { hash } = useRouter();
+  const { params } = useRouter();
+  const code = params.code ?? '';
 
   const decoded = useMemo((): { replay: Replay } | { error: string; hint: string } => {
-    if (!hash) {
+    if (!code) {
       return {
         error: 'No replay in this link.',
-        hint: 'A replay link looks like /replay#… — check that the whole link was copied, including the part after the “#”.',
+        hint: 'A replay link looks like /r/… — check that the whole link was copied.',
       };
     }
     try {
-      return { replay: decodeReplay(hash, ENGINE_VERSION) };
+      return { replay: decodeReplay(code, ENGINE_VERSION) };
     } catch (err) {
       if (err instanceof ReplayDecodeError) {
         return {
@@ -46,7 +52,7 @@ export function ReplayPage() {
       }
       throw err;
     }
-  }, [hash]);
+  }, [code]);
 
   if ('error' in decoded) {
     return (
@@ -62,10 +68,10 @@ export function ReplayPage() {
 
   // Keyed on the code so a different replay rebuilds from scratch rather than
   // feeding new actions to a half-played game.
-  return <ReplayView key={hash} replay={decoded.replay} />;
+  return <ReplayView key={code} replay={decoded.replay} code={code} />;
 }
 
-function ReplayView({ replay }: { replay: Replay }) {
+function ReplayView({ replay, code }: { replay: Replay; code: string }) {
   const controls = useReplaySession(replay);
   const { style } = useGameStyle();
   const level = replay.aiLevel as AgentLevel;
@@ -73,6 +79,40 @@ function ReplayView({ replay }: { replay: Replay }) {
 
   const mine = replay.scores[replay.humanSeat];
   const theirs = replay.scores[1 - replay.humanSeat];
+
+  /**
+   * Where the invitation sends a viewer.
+   *
+   * Today's deal is still live, so it goes to the Daily where their result can
+   * actually land on the board next to this one. Any older deal cannot: the
+   * Worker refuses a score for a puzzle that is no longer current
+   * (`worker/scores.ts`), so pointing there would promise a rematch that
+   * silently never posts. Those go to Practice on the same seed instead, and
+   * the line under the button says so rather than letting them find out after
+   * twenty minutes of play.
+   */
+  const challenge = useMemo(() => {
+    const today = puzzleIdFor();
+    if (replay.puzzleId === today) {
+      return {
+        href: `/daily?ai=${replay.aiLevel}`,
+        label: 'See if you can beat me',
+        note: null as string | null,
+      };
+    }
+    if (replay.puzzleId) {
+      return {
+        href: `/practice?seed=${seedForPuzzle(replay.puzzleId)}&ai=${replay.aiLevel}`,
+        label: 'See if you can beat me',
+        note: `That deal is from ${replay.puzzleId}, so it opens in Practice — past days are no longer ranked.`,
+      };
+    }
+    return {
+      href: `/practice?seed=${replay.seed}&ai=${replay.aiLevel}`,
+      label: 'See if you can beat me',
+      note: 'Practice games are never ranked, but this is the same deal.',
+    };
+  }, [replay.puzzleId, replay.aiLevel, replay.seed]);
 
   const currentRound =
     controls.roundAt[Math.min(controls.cursor, controls.roundAt.length - 1)] ?? 1;
@@ -92,12 +132,20 @@ function ReplayView({ replay }: { replay: Replay }) {
               </p>
             </div>
           </div>
-          <Link
-            to={replay.puzzleId ? '/daily' : '/practice'}
-            className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
-          >
-            {replay.puzzleId ? 'Play this puzzle' : 'Play a game'}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <ShareButton
+              url={`${window.location.origin}${replayHref(code)}`}
+              text={recapText(replay, { levelLabel: opponentLabel })}
+              label="Share"
+              title="Share this replay"
+            />
+            <Link
+              to={challenge.href}
+              className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
+            >
+              {challenge.label}
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -118,6 +166,8 @@ function ReplayView({ replay }: { replay: Replay }) {
         opponentLabel={opponentLabel}
         title={`Replay (${replay.puzzleId ?? 'Practice'})`}
       />
+
+      {challenge.note && <p className="text-xs text-neutral-500">{challenge.note}</p>}
 
       <CopyRecap replay={replay} levelLabel={opponentLabel} />
     </div>

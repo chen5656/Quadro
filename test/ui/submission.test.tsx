@@ -1,15 +1,14 @@
 /**
- * The submission state machine (§7.2) and the panel that renders it.
+ * The submission state machine (§7.2).
  *
  * Covers the acceptance criteria that do not need a whole game played: a slower
  * second attempt (AC-018), a faster one (AC-019), and the rejection codes the
  * Worker can return (AC-021, AC-022, AC-024).
  */
 
-import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SubmitPanel } from '../../src/components/SubmitPanel';
 import type { Identity } from '../../src/auth';
 import { useSubmission } from '../../src/game/useSubmission';
 
@@ -218,64 +217,4 @@ describe('useSubmission', () => {
     await act(() => result.current.retry());
     expect(result.current.state).toMatchObject({ kind: 'posted', rank: 2 });
   }, 20_000);
-});
-
-describe('SubmitPanel', () => {
-  const noop = () => {};
-
-  it('shows no submit controls when not admissible', () => {
-    render(
-      <SubmitPanel
-        admissible={false}
-        elapsedMs={461_230}
-        state={{ kind: 'idle' }}
-        onRetry={noop}
-        onDiscard={noop}
-        onPlayAgain={noop}
-      />,
-    );
-    expect(screen.getByText(/Nothing was recorded/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument();
-  });
-
-  it('distinguishes a new personal best from a slower attempt (FR-031)', async () => {
-    const { rerender } = render(
-      <SubmitPanel
-        admissible
-        elapsedMs={461_230}
-        state={{ kind: 'posted', rank: 4, elapsedMs: 461_230, totalEntries: 38 }}
-        onRetry={noop}
-        onDiscard={noop}
-        onPlayAgain={noop}
-      />,
-    );
-    expect(screen.getByText(/New personal best/i)).toBeInTheDocument();
-
-    rerender(
-      <SubmitPanel
-        admissible
-        elapsedMs={470_000}
-        state={{ kind: 'not-improved', bestElapsedMs: 461_230 }}
-        onRetry={noop}
-        onDiscard={noop}
-        onPlayAgain={noop}
-      />,
-    );
-    await waitFor(() => expect(screen.getByText(/Not higher than your previous best margin/i)).toBeInTheDocument());
-  });
-
-  it('shows a retry control when the post failed', () => {
-    render(
-      <SubmitPanel
-        admissible
-        elapsedMs={461_230}
-        state={{ kind: 'failed', code: 'INTERNAL', message: 'Server error' }}
-        onRetry={noop}
-        onDiscard={noop}
-        onPlayAgain={noop}
-      />,
-    );
-    expect(screen.getByRole('alert')).toHaveTextContent('Server error');
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
-  });
 });

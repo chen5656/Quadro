@@ -26,8 +26,13 @@
   // `/api/*`, because nothing on `www` should be served at all. The Worker
   // answers every request there with a 308 back to the apex. Without it, `www`
   // is a full second copy of the app whose `/api/*` calls never reach a Worker.
+  //
+  // `/r/*` is the third: a shared replay is served by the Worker rather than
+  // Pages so its link preview can carry that game's score (worker/share.ts).
+  // It fetches the SPA shell from `/index.html`, which Pages still owns.
   "routes": [
     { "pattern": "acgame.win/api/*", "zone_name": "acgame.win" },
+    { "pattern": "acgame.win/r/*", "zone_name": "acgame.win" },
     { "pattern": "www.acgame.win/*", "zone_name": "acgame.win" }
   ],
 

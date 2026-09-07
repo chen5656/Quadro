@@ -17,7 +17,7 @@ import { useIdentity } from '../auth';
 import { useGameStyle } from '../context/GameStyleContext';
 import { HumanAvatar } from './RobotAvatar';
 import { formatElapsedSeconds } from './Timer';
-import { REPLAY_PATH } from '../replay/share';
+import { replayHref } from '../replay/share';
 import { Link } from '../router';
 
 type State =
@@ -257,7 +257,7 @@ function Body({
                   <td className="px-1 py-1.5 text-right">
                     {row.replay ? (
                       <Link
-                        to={`${REPLAY_PATH}#${row.replay}`}
+                        to={replayHref(row.replay)}
                         className="inline-flex items-center justify-center rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-200 hover:bg-sky-600 hover:text-white transition-colors"
                         title="Watch replay"
                       >

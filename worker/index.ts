@@ -13,6 +13,7 @@ import { HttpError, corsHeaders, fail, json } from './http';
 import { AI_LEVELS, DEFAULT_AI_LEVEL, isAiLevel, leaderboard } from './leaderboard';
 import { history } from './history';
 import { deleteMe, submitScore } from './scores';
+import { replayCodeFrom, shareReplayPage } from './share';
 
 /**
  * The service worker served at `https://www.acgame.win/sw.js`.
@@ -88,6 +89,17 @@ export default {
       }
 
       return Response.redirect(target.toString(), 308);
+    }
+
+    /**
+     * `/r/<code>` is an HTML page, not an API call: it is the SPA shell with
+     * this replay's own link-preview tags written into the head
+     * (`worker/share.ts`). Handled here, above the CORS wrapper, because a
+     * document served to the address bar has no origin to permit.
+     */
+    const replayCode = replayCodeFrom(new URL(request.url).pathname);
+    if (replayCode && (request.method === 'GET' || request.method === 'HEAD')) {
+      return shareReplayPage(request, replayCode);
     }
 
     const cors = corsHeaders(env.ALLOWED_ORIGIN);
