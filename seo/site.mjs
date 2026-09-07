@@ -24,7 +24,7 @@ export const APP_ROUTES = [
     path: '/',
     title: 'NODRA — A game of patterns, memory, and control',
     description:
-      'A strategic duel between human consciousness and a synthetic replica. Extract tokens from attention nodes, anchor your memory, resist hallucination. Free, no sign-in, works offline.',
+      'A strategic duel between human consciousness and a synthetic replica. Extract tokens from attention nodes, anchor your memory, resist hallucination. Forever free, no sign-in, works offline.',
     prose: {
       h1: 'NODRA',
       lead:

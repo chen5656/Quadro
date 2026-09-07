@@ -7,7 +7,7 @@ faq: true
 
 ## Is NODRA free?
 
-Yes. NODRA is completely free to play. There is no paid tier, no ads, and no in-game purchase.
+Yes. NODRA is forever free to play. There is no paid tier, no ads, and no in-game purchase.
 
 ## Do I need an account?
 
