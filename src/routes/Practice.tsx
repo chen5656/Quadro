@@ -12,6 +12,7 @@ import { LEVELS, LEVEL_LABELS, type AgentLevel } from '../ai';
 import { Board } from '../components/Board';
 import { LevelPickerModal } from '../components/LevelPickerModal';
 import { GameResultCard } from '../components/GameResultCard';
+import { matchBreakdown } from '../game/breakdown';
 import { RobotAvatar } from '../components/RobotAvatar';
 import { useGameStyle } from '../context/GameStyleContext';
 import { useGameSession } from '../game/useGameSession';
@@ -230,6 +231,7 @@ function PracticeGame({
           aiLevel={setup.level}
           humanScore={result.scores[session.humanSeat]}
           opponentScore={result.scores[1 - session.humanSeat]}
+          breakdown={matchBreakdown(session.game.events, session.humanSeat)}
           ranked={false}
           onPlayAgain={session.restart}
           onBack={onExit}

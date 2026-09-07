@@ -15,6 +15,7 @@ import { getLeaderboard } from '../api/client';
 import { useIdentity } from '../auth';
 import { Board } from '../components/Board';
 import { GameResultCard } from '../components/GameResultCard';
+import { matchBreakdown } from '../game/breakdown';
 import { LevelPickerModal } from '../components/LevelPickerModal';
 import { encodeReplay } from '../replay/codec';
 import { replayOf, replayUrl } from '../replay/share';
@@ -276,6 +277,7 @@ function DailyAttempt({
           aiLevel={level}
           humanScore={session.game.result().scores[HUMAN_SEAT]}
           opponentScore={session.game.result().scores[1 - HUMAN_SEAT]}
+          breakdown={matchBreakdown(session.game.events, HUMAN_SEAT)}
           submissionState={submission.state}
           ranked={isRanked(level)}
           onPlayAgain={onPlayAgain}

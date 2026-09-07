@@ -277,3 +277,139 @@
 .azul-compact-controls .azul-meta {
   display: none;
 }
+
+/*
+ * Result screen.
+ *
+ * Every entrance is the same shape — rise a little, fade in, settle — so the
+ * staged reveal reads as one movement rather than five unrelated tricks. The
+ * card sets `--d` per element for the stagger.
+ */
+.azul-res-rise {
+  animation: azul-res-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0s);
+}
+
+.azul-res-slam {
+  animation: azul-res-slam 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0s);
+}
+
+.azul-res-pop {
+  animation: azul-res-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: var(--d, 0s);
+}
+
+/* The primary call to action keeps breathing after it lands. */
+.azul-res-breathe {
+  animation: azul-res-breathe 2.6s ease-in-out 1.2s infinite;
+}
+
+/* A slow sweep of light across the winner's headline. */
+.azul-res-sheen {
+  background-size: 200% 100%;
+  animation: azul-res-sheen 4.5s ease-in-out 1s infinite;
+}
+
+.azul-res-rays {
+  animation: azul-res-rays 26s linear infinite;
+}
+
+.azul-res-confetti {
+  animation: azul-res-confetti var(--dur, 3.4s) linear var(--d, 0s) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .azul-res-rise,
+  .azul-res-slam,
+  .azul-res-pop,
+  .azul-res-breathe,
+  .azul-res-sheen,
+  .azul-res-rays,
+  .azul-res-confetti {
+    animation: none;
+  }
+}
+
+@keyframes azul-res-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes azul-res-slam {
+  0% {
+    opacity: 0;
+    transform: scale(1.6);
+    filter: blur(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.97);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes azul-res-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.86) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes azul-res-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 10px 30px -10px rgba(2, 132, 199, 0.75),
+      0 0 0 0 rgba(56, 189, 248, 0);
+  }
+  50% {
+    box-shadow:
+      0 14px 40px -10px rgba(2, 132, 199, 0.9),
+      0 0 0 10px rgba(56, 189, 248, 0.06);
+  }
+}
+
+@keyframes azul-res-sheen {
+  0%,
+  55% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+@keyframes azul-res-rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes azul-res-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx, 0), var(--dy, 320px), 0) rotate(var(--rot, 540deg));
+  }
+}
