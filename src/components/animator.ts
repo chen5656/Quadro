@@ -621,7 +621,6 @@ export async function animateSettlement(
     // Without the flights there is nothing to score sound against, so the whole
     // settlement gets one bell rather than a dozen on the same frame.
     if (scoredEvents.length > 0) sfx('score');
-    if (penaltyEvents.some((e) => e.tiles > 0)) sfx('penalty');
     for (const event of scoredEvents) applyScored(view, event);
     for (const event of penaltyEvents) applyPenalty(view, event);
     commit();
@@ -658,7 +657,6 @@ export async function animateSettlement(
   for (const event of penaltyEvents) {
     const { player, points, tiles } = event;
     if (tiles > 0) {
-      sfx('penalty', { rate: Math.max(0.8, 1 - tiles * 0.03) });
       animator.popScore(`${points}`, `floor-${player}-0`, false);
       const floorIds = Array.from({ length: Math.min(tiles, 7) }, (_, i) => `floor-${player}-${i}`);
       await animator.fadeOut(floorIds, 320);
