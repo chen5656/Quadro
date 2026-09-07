@@ -8,4 +8,5 @@
 # request then falls through to the SPA fallback below and `/api/providers`
 # answers 200 with index.html, which `fetchProviders` parses as JSON and throws
 # on: the sign-in dialog loses its Google and Apple buttons.
+
 /*      /index.html  200
