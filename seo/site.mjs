@@ -7,10 +7,10 @@
  */
 
 export const ORIGIN = 'https://acgame.win';
-export const SITE_NAME = 'NODRA';
-export const OG_IMAGE = '/og-nodra.png';
+export const SITE_NAME = 'QUADRO';
+export const OG_IMAGE = '/og.png';
 export const OG_IMAGE_ALT =
-  'NODRA — A game of patterns, memory, and control.';
+  'Quadro — A free tile-drafting strategy game against an AI opponent.';
 export const TWITTER_CARD = 'summary_large_image';
 
 /**
@@ -22,13 +22,13 @@ export const TWITTER_CARD = 'summary_large_image';
 export const APP_ROUTES = [
   {
     path: '/',
-    title: 'NODRA — A game of patterns, memory, and control',
+    title: 'Quadro board game — a free tile-drafting strategy game against an AI opponent',
     description:
-      'A strategic duel between human consciousness and a synthetic replica. Extract tokens from attention nodes, anchor your memory, resist hallucination. Forever free, no sign-in, works offline.',
+      'Quadro is a free tile-drafting strategy game against an AI opponent. Draft tokens from shared attention nodes, build your 5×5 grid, deny your rival. No sign-in, no install, works offline.',
     prose: {
-      h1: 'NODRA',
+      h1: 'QUADRO',
       lead:
-        'A fast-paced consciousness duel against an AI opponent. Extract memory tokens from shared attention nodes, align them in your context lines, and etch them into permanent memory — before the synthetic replica steals your identity. Free, no download, plays in your browser. One deal a day, the same for everyone, scored on your winning margin.',
+        'Quadro is a free tile-drafting strategy game against an AI opponent. Extract memory tokens from shared attention nodes, align them in your context lines, and etch them into permanent memory — before the synthetic replica steals your identity. Free, no download, plays in your browser. One deal a day, the same for everyone, scored on your winning margin.',
       links: [
         ['/daily', 'Daily Challenge — one deal for everyone, scored on margin'],
         ['/practice', 'Practice — any opponent, any deal, untimed'],
@@ -38,16 +38,16 @@ export const APP_ROUTES = [
         ['/guide/rules', 'The rules'],
         ['/guide/scoring', 'How scoring works'],
         ['/guide/strategy', 'Strategy guide'],
-        ['/guide/games-like-azul', 'Games like Azul — how NODRA compares'],
+        ['/guide/games-like-azul', 'Games like Azul — how QUADRO compares'],
         ['/guide', 'All the lore, rules, scoring and strategy guides'],
       ],
     },
   },
   {
     path: '/daily',
-    title: 'Daily Challenge — NODRA',
+    title: 'Daily Challenge — QUADRO',
     description:
-      "Today's NODRA deal, identical for every player. Pick your opponent difficulty, maximize your score margin, and take the lead on the daily board.",
+      "Today's QUADRO deal, identical for every player. Pick your opponent difficulty, maximize your score margin, and take the lead on the daily board.",
     prose: {
       h1: 'Daily Challenge',
       lead:
@@ -60,9 +60,9 @@ export const APP_ROUTES = [
   },
   {
     path: '/practice',
-    title: 'Practice — NODRA',
+    title: 'Practice — QUADRO',
     description:
-      'Play NODRA untimed against any of six AI opponents, on any deal. Nothing is recorded, and it works offline.',
+      'Play QUADRO untimed against any of six AI opponents, on any deal. Nothing is recorded, and it works offline.',
     prose: {
       h1: 'Practice',
       lead:
@@ -76,7 +76,7 @@ export const APP_ROUTES = [
   },
   {
     path: '/tutorial',
-    title: 'Learn to play NODRA — a guided round',
+    title: 'Learn to play QUADRO — a guided round',
     description:
       'A two-minute scripted round: attention drafting, context lines, hallucination overload, and how permanent memory scores. No sign-in, nothing recorded.',
     prose: {
@@ -92,9 +92,9 @@ export const APP_ROUTES = [
   },
   {
     path: '/leaderboard',
-    title: 'Leaderboard — NODRA Daily',
+    title: 'Leaderboard — QUADRO Daily',
     description:
-      "Today's NODRA leaderboard, with a separate board for each of the six AI opponents. Ranked by score margin, then by time.",
+      "Today's QUADRO leaderboard, with a separate board for each of the six AI opponents. Ranked by score margin, then by time.",
     prose: {
       h1: 'Leaderboard',
       lead:
@@ -107,13 +107,13 @@ export const APP_ROUTES = [
   },
   {
     path: '/replay',
-    title: 'Replay — NODRA',
+    title: 'Replay — QUADRO',
     description:
-      'Watch a turn-by-turn replay of a NODRA match.',
+      'Watch a turn-by-turn replay of a QUADRO match.',
     prose: {
       h1: 'Match Replay',
       lead:
-        'Watch a full turn-by-turn reconstructed replay of a completed NODRA consciousness duel.',
+        'Watch a full turn-by-turn reconstructed replay of a completed QUADRO consciousness duel.',
       links: [
         ['/daily', "Play today's daily puzzle"],
         ['/practice', 'Practice against AI'],
@@ -122,13 +122,13 @@ export const APP_ROUTES = [
   },
   {
     path: '/history',
-    title: 'Match History — NODRA',
+    title: 'Match History — QUADRO',
     description:
       'View your past daily challenges and watch game replays.',
     prose: {
       h1: 'Match History',
       lead:
-        'Your match history and recorded replays for the NODRA Daily Challenge.',
+        'Your match history and recorded replays for the QUADRO Daily Challenge.',
       links: [
         ['/daily', "Play today's daily puzzle"],
         ['/leaderboard', "See today's leaderboard"],

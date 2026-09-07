@@ -1,4 +1,4 @@
-# NODRA
+# QUADRO
 
 A browser-native, full-stack implementation of a tile-drafting board game, inspired by **Azul**. Built with TypeScript, React, Vite, and Cloudflare Workers + D1.
 
@@ -161,7 +161,7 @@ card; regenerate it with any headless browser at 1200×630.
 
 ## Attribution & Disclaimer
 
-NODRA is an independent, open-source implementation inspired by the tile-drafting mechanics of the board game **Azul**, designed by Michael Kiesling.
+QUADRO is an independent, open-source implementation inspired by the tile-drafting mechanics of the board game **Azul**, designed by Michael Kiesling.
 
 This project is not affiliated with, endorsed by, or sponsored by Plan B Games, Next Move Games, or Asmodee. "Azul" and all related trademarks belong to their respective owners; they are used here only to describe the mechanics this project draws on. No original artwork, text, or components from the published game are reproduced.
 

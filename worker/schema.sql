@@ -1,4 +1,4 @@
--- NODRA Daily leaderboard storage (BUILD-SPEC §12.1).
+-- QUADRO Daily leaderboard storage (BUILD-SPEC §12.1).
 --
 --   npx wrangler d1 execute nodra --remote --file worker/schema.sql
 

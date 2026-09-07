@@ -41,9 +41,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'NODRA — Daily Challenge',
-        short_name: 'NODRA',
-        description: 'A game of patterns, memory, and control. One deal a day, works offline.',
+        name: 'QUADRO — Daily Challenge',
+        short_name: 'QUADRO',
+        description: 'A free tile-drafting strategy game against an AI opponent. One deal a day, works offline.',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
         display: 'standalone',

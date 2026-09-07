@@ -63,15 +63,15 @@ const RouterContext = createContext<RouterValue>({
 });
 
 const ROUTE_TITLES: Record<Route, string> = {
-  '/': 'NODRA — A game of patterns, memory, and control',
-  '/daily': 'Daily Challenge — NODRA',
-  '/practice': 'Practice — NODRA',
-  '/tutorial': 'Learn to play NODRA — a guided round',
-  '/leaderboard': 'Leaderboard — NODRA Daily',
-  '/leaderboard/today': 'Leaderboard — NODRA Daily',
-  '/leaderboard/date': 'Leaderboard — NODRA Daily',
-  '/replay': 'Replay — NODRA',
-  '/history': 'Match History — NODRA',
+  '/': 'Quadro board game — a free tile-drafting strategy game against an AI opponent',
+  '/daily': 'Daily Challenge — QUADRO',
+  '/practice': 'Practice — QUADRO',
+  '/tutorial': 'Learn to play QUADRO — a guided round',
+  '/leaderboard': 'Leaderboard — QUADRO Daily',
+  '/leaderboard/today': 'Leaderboard — QUADRO Daily',
+  '/leaderboard/date': 'Leaderboard — QUADRO Daily',
+  '/replay': 'Replay — QUADRO',
+  '/history': 'Match History — QUADRO',
 };
 
 export function RouterProvider({ children }: { children: ReactNode }) {
@@ -81,7 +81,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.title = ROUTE_TITLES[match.route] || 'NODRA';
+      document.title = ROUTE_TITLES[match.route] || 'QUADRO';
     }
   }, [match.route]);
 

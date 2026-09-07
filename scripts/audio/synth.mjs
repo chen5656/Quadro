@@ -1,7 +1,7 @@
 /**
  * A tiny offline synthesis toolkit for the game's audio assets.
  *
- * Everything Nodra plays is generated here rather than licensed, so the whole
+ * Everything Quadro plays is generated here rather than licensed, so the whole
  * sound design is one reproducible script: run `node scripts/audio/build.mjs`
  * and `public/audio/` is rebuilt from source.
  */

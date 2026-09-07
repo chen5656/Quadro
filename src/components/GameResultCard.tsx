@@ -163,8 +163,8 @@ export function GameResultCard({
   const handleShareClick = async () => {
     const verdict = draw ? 'drew with' : humanWon ? 'beat' : 'lost to';
     const shareData = {
-      title: 'NODRA — Daily Challenge',
-      text: `I ${verdict} ${opponentName} ${humanScore}–${opponentScore} in ${timeFormatted} on NODRA!`,
+      title: 'QUADRO — Daily Challenge',
+      text: `I ${verdict} ${opponentName} ${humanScore}–${opponentScore} in ${timeFormatted} on QUADRO!`,
       url: window.location.href,
     };
     if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.(shareData)) {

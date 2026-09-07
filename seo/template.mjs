@@ -214,7 +214,7 @@ export function guidePage({ path, title, description, headings, html, updated, s
     </main>
     <footer class="site-footer">
       <div class="bar">
-        <span>${SITE_NAME} — A game of patterns, memory, and control.</span>
+        <span>${SITE_NAME} — A free tile-drafting strategy game against an AI opponent.</span>
         <a href="/guide">Guide</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>

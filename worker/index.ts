@@ -1,5 +1,5 @@
 /**
- * `/api/*` router for the NODRA Daily (§13).
+ * `/api/*` router for the QUADRO Daily (§13).
  *
  * Four endpoints and a nightly cron. Every handler returns a structured error
  * rather than throwing past the runtime, so a bug never becomes an opaque 1101.

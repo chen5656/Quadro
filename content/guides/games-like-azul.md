@@ -1,14 +1,14 @@
 ---
-title: Games like Azul — NODRA is a free daily browser-based duel
-description: Looking for a game like Azul to play online? NODRA is a free token-drafting strategy game against an AI adversary — here is what it keeps, what it reimagines, and where it is genuinely different.
+title: Games like Azul — QUADRO is a free daily browser-based duel
+description: Looking for a game like Azul to play online? QUADRO is a free token-drafting strategy game against an AI adversary — here is what it keeps, what it reimagines, and where it is genuinely different.
 updated: 2026-09-05
 ---
 
 If you have played *Azul* and gone looking for something with the same cerebral feel — draft a color, watch what you leave behind, align it somewhere it will score later — most alternatives are either the physical board game, paid app store ports, or multiplayer lobbies with long turn timers.
 
-NODRA reimagines that classic drafting mechanic into an intense 1-on-1 consciousness duel between human and AI that you can play directly in your browser in five minutes.
+QUADRO reimagines that classic drafting mechanic into an intense 1-on-1 consciousness duel between human and AI that you can play directly in your browser in five minutes.
 
-## What NODRA retains
+## What QUADRO retains
 
 The core strategic drafting loop is intact:
 
@@ -20,9 +20,9 @@ The core strategic drafting loop is intact:
 
 See [the rules](/guide/rules) and [how scoring works](/guide/scoring) for the full breakdown.
 
-## What NODRA transforms
+## What QUADRO transforms
 
-Three fundamental shifts set NODRA apart:
+Three fundamental shifts set QUADRO apart:
 
 **1. A deep sci-fi narrative: Human vs. Synthetic AI Twin.**
 Instead of laying ceramic tiles, you are engaged in a battle for human consciousness. The [story](/guide/story) frames every move: you extract memory tokens, defend your identity, and flood the AI's buffer to force hallucination collapse.
@@ -33,9 +33,9 @@ Two seats, zero lobby wait, zero lag. Six difficulty levels — from stochastic 
 **3. Daily shared puzzle scored on margin.**
 Every player across the globe receives the exact same attention deal each day. You are ranked on your **score margin** over the AI.
 
-## What NODRA is not
+## What QUADRO is not
 
-NODRA is an original browser-based strategic game inspired by the drafting genre that *Azul* popularized. It is not affiliated with, licensed by, or endorsed by *Azul* or its publisher.
+QUADRO is an original browser-based strategic game inspired by the drafting genre that *Azul* popularized. It is not affiliated with, licensed by, or endorsed by *Azul* or its publisher.
 
 ## Try it
 

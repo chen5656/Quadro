@@ -29,9 +29,9 @@ export function Home() {
     <div className="home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-intro">
-          <p className="home-kicker">NODRA <span>/ The Mirror Link Protocol</span></p>
+          <p className="home-kicker">QUADRO <span>/ The Mirror Link Protocol</span></p>
           <h1 id="home-title">Your mind.<br />An AI rival.<br /><span>Every move matters.</span></h1>
-          <p className="home-description">A game of patterns, memory, and control. Build your grid, deny your rival, and make every token count.</p>
+          <p className="home-description">A free tile-drafting strategy game against an AI opponent. Build your grid, deny your rival, and make every token count.</p>
           <div className="home-actions">
             <Link to="/daily" className="home-primary">Play today’s challenge <Arrow /></Link>
             <Link to="/practice" className="home-secondary">Practice vs AI</Link>
@@ -41,7 +41,7 @@ export function Home() {
 
         <figure className="home-demo" aria-label="Game preview: colored tokens move from shared nodes into rows, then onto a five-by-five memory grid to score points.">
           <div className="home-demo-header">
-            <span>NODRA <span className="home-demo-label">/ Game preview</span></span>
+            <span>QUADRO <span className="home-demo-label">/ Game preview</span></span>
             <span className={`home-demo-guide home-demo-guide--${demoStep.phase}`}>
               <span aria-hidden="true">{demoStep.phase}/3</span> {demoStep.text}
             </span>
@@ -76,8 +76,8 @@ export function Home() {
       <section className="home-about" aria-labelledby="home-about-title">
         <div>
           <h2 id="home-about-title">A familiar game. A different opponent.</h2>
-          <p>Inspired by the tile-drafting mechanics of <em>Azul</em>, NODRA brings the contest into a world of shared memories and synthetic minds. Face six AI difficulty levels, or return for the daily challenge.</p>
-          <a href="/guide/games-like-azul" className="home-text-link">How NODRA compares to Azul <Arrow /></a>
+          <p>Inspired by the tile-drafting mechanics of <em>Azul</em>, QUADRO brings the contest into a world of shared memories and synthetic minds. Face six AI difficulty levels, or return for the daily challenge.</p>
+          <a href="/guide/games-like-azul" className="home-text-link">How QUADRO compares to Azul <Arrow /></a>
         </div>
         <nav aria-label="Game guides" className="home-guides">
           <h3>Explore the game</h3>
