@@ -39,8 +39,20 @@ export const PROVIDER_LABELS: Record<string, string> = {
  * for a provider whose redirect would dead-end in a 500.
  */
 export async function fetchProviders(): Promise<string[]> {
-  const response = await fetch(`${BASE}/api/providers`, { credentials: 'include' });
-  if (!response.ok) return [];
-  const body = (await response.json()) as { social?: string[] };
-  return body.social ?? [];
+  try {
+    const response = await fetch(`${BASE}/api/providers`, { credentials: 'include' });
+    if (!response.ok) return [];
+    /**
+     * Not just defensive typing. A misrouted `/api/*` is answered by the SPA
+     * fallback with `200` and index.html, so `response.ok` is true and the body
+     * is HTML — parsing it throws, and an unhandled throw here used to leave
+     * `providers` at its initial empty array, silently dropping the Google and
+     * Apple buttons from the sign-in dialog. An empty list is the same visible
+     * outcome, but it arrives as a value instead of an unhandled rejection.
+     */
+    const body = (await response.json()) as { social?: string[] };
+    return Array.isArray(body.social) ? body.social : [];
+  } catch {
+    return [];
+  }
 }

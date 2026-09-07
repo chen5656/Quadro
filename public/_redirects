@@ -1,4 +1,11 @@
 # SPA fallback: Pages must serve index.html for unknown paths so deep links to
-# /daily, /practice and /leaderboard work (§9.1, AC-036). /api/* is the Worker's.
-/api/*  /api/:splat  200
+# /daily, /practice and /leaderboard work (§9.1, AC-036).
+#
+# `/api/*` deliberately has NO rule here. It belongs to the Worker route
+# declared in `wrangler.jsonc` (`acgame.win/api/*`), and a rule of any kind —
+# even the self-rewrite `/api/*  /api/:splat  200` that used to sit above this
+# line — claims the path for Pages instead. With no matching static asset the
+# request then falls through to the SPA fallback below and `/api/providers`
+# answers 200 with index.html, which `fetchProviders` parses as JSON and throws
+# on: the sign-in dialog loses its Google and Apple buttons.
 /*      /index.html  200

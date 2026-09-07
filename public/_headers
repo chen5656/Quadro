@@ -1,9 +1,15 @@
-# Content Security Policy: everything the app needs now comes from its own
-# origin (NFR-009). Sign-in is a top-level redirect to the provider and back —
-# no third-party script, iframe or XHR — and avatars are served by the Worker
-# from R2, so `img-src 'self'` covers them.
+# Content Security Policy: everything the app needs comes from its own origin
+# (NFR-009). Sign-in is a top-level redirect to the provider and back — no
+# third-party script, iframe or XHR — and avatars are served by the Worker from
+# R2, so `img-src 'self'` covers them.
+#
+# The one exception is Cloudflare Web Analytics, which the zone injects into
+# every HTML response: the beacon is fetched from `static.cloudflareinsights.com`
+# and reports to `cloudflareinsights.com`. Both have to be named here or the
+# script is blocked and the analytics simply record nothing. Narrow on purpose —
+# these two hosts, script and connect only.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com https://*.apple.com https://*.apple-mapkit.com https://media.licdn.com; connect-src 'self'; media-src 'self'; worker-src 'self' blob:; frame-src 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com https://*.apple.com https://*.apple-mapkit.com https://media.licdn.com; connect-src 'self' https://cloudflareinsights.com; media-src 'self'; worker-src 'self' blob:; frame-src 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 

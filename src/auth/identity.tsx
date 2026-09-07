@@ -59,9 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    void fetchProviders().then((list) => {
-      if (active) setProviders(list);
-    });
+    // `fetchProviders` resolves to `[]` rather than rejecting, so this cannot
+    // reject in practice; the catch is here so a future change to it degrades
+    // to the email-only dialog instead of an unhandled rejection.
+    void fetchProviders()
+      .then((list) => {
+        if (active) setProviders(list);
+      })
+      .catch(() => {
+        if (active) setProviders([]);
+      });
     return () => {
       active = false;
     };
