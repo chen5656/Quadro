@@ -57,7 +57,8 @@ export interface GameResultCardProps {
    * offering a link to nothing.
    */
   share?: { url: string; text: string } | null;
-  onPlayAgain: () => void;
+  /** Fresh game — a new deal in Practice. Omitted in Daily where only Restart applies. */
+  onPlayAgain?: () => void;
   /** Replay the same deal. Omitted hides the Restart control. */
   onRestart?: () => void;
   onWatchReplay?: () => void;
@@ -420,22 +421,47 @@ export function GameResultCard({
           <div
             className={`${skip || stage >= BEAT_CTA ? '' : 'opacity-0 '}${skip ? '' : 'azul-res-rise '}order-4 flex w-full max-w-xl flex-col items-center gap-2.5`}
           >
-            <button
-              type="button"
-              onClick={onPlayAgain}
-              className={`${skip ? '' : 'azul-res-breathe '}group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-900/40 transition hover:from-sky-400 hover:to-sky-500 active:scale-[0.98] sm:py-4 sm:text-lg`}
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <span>{PLAY_AGAIN_LABEL}</span>
-              <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">
-                →
-              </span>
-            </button>
+            {onPlayAgain ? (
+              <button
+                type="button"
+                onClick={onPlayAgain}
+                className={`${skip ? '' : 'azul-res-breathe '}group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-900/40 transition hover:from-sky-400 hover:to-sky-500 active:scale-[0.98] sm:py-4 sm:text-lg`}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <span>{PLAY_AGAIN_LABEL}</span>
+                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            ) : onRestart ? (
+              <button
+                type="button"
+                onClick={onRestart}
+                className={`${skip ? '' : 'azul-res-breathe '}group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-sky-500 to-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-sky-900/40 transition hover:from-sky-400 hover:to-sky-500 active:scale-[0.98] sm:py-4 sm:text-lg`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 stroke-current"
+                  fill="none"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                  <path d="M3 3v5h5" />
+                </svg>
+                <span>Restart</span>
+                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            ) : null}
 
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
-              {onRestart && (
+              {onPlayAgain && onRestart && (
                 <button
                   type="button"
                   onClick={onRestart}

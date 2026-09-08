@@ -108,7 +108,6 @@ export function Daily() {
         puzzleId={puzzleId}
         level={level}
         onSelectLevel={handleSelectLevel}
-        onPlayAgain={() => setAttempt((n) => n + 1)}
       />
     </div>
   );
@@ -118,12 +117,10 @@ function DailyAttempt({
   puzzleId,
   level,
   onSelectLevel,
-  onPlayAgain,
 }: {
   puzzleId: string;
   level: AgentLevel;
   onSelectLevel: (level: AgentLevel) => void;
-  onPlayAgain: () => void;
 }) {
   const identity = useIdentity();
   const submission = useSubmission(identity);
@@ -280,7 +277,6 @@ function DailyAttempt({
           humanScore={session.game.result().scores[HUMAN_SEAT]}
           opponentScore={session.game.result().scores[1 - HUMAN_SEAT]}
           breakdown={matchBreakdown(session.game.events, HUMAN_SEAT)}
-          onNewGame={onPlayAgain}
           onRestart={restart}
           onBack={() => navigate('/')}
           backLabel="Back to Home"
@@ -298,7 +294,6 @@ function DailyAttempt({
           breakdown={matchBreakdown(session.game.events, HUMAN_SEAT)}
           submissionState={submission.state}
           ranked={isRanked(level)}
-          onPlayAgain={onPlayAgain}
           onRestart={restart}
           onBack={() => navigate('/')}
           backLabel="Back to Home"

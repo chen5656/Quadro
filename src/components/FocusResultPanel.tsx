@@ -18,8 +18,8 @@ export interface FocusResultPanelProps {
   humanScore: number;
   opponentScore: number;
   breakdown?: MatchBreakdown;
-  /** Fresh game — a new deal in Practice, a new attempt in Daily. */
-  onNewGame: () => void;
+  /** Fresh game — a new deal in Practice. Omitted in Daily where only Restart applies. */
+  onNewGame?: () => void;
   /** The same deal again. */
   onRestart?: () => void;
   onBack?: () => void;
@@ -120,22 +120,34 @@ export function FocusResultPanel({
       )}
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          onClick={onNewGame}
-          className="inline-flex flex-1 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500 active:scale-[0.98]"
-        >
-          {PLAY_AGAIN_LABEL}
-        </button>
-        {onRestart && (
+        {onNewGame ? (
+          <>
+            <button
+              type="button"
+              onClick={onNewGame}
+              className="inline-flex flex-1 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500 active:scale-[0.98]"
+            >
+              {PLAY_AGAIN_LABEL}
+            </button>
+            {onRestart && (
+              <button
+                type="button"
+                onClick={onRestart}
+                className="inline-flex flex-1 items-center justify-center rounded-lg border border-neutral-700 bg-neutral-900/70 px-4 py-2.5 text-sm font-semibold text-neutral-200 transition hover:bg-neutral-800 hover:text-white active:scale-[0.98]"
+              >
+                Restart
+              </button>
+            )}
+          </>
+        ) : onRestart ? (
           <button
             type="button"
             onClick={onRestart}
-            className="inline-flex flex-1 items-center justify-center rounded-lg border border-neutral-700 bg-neutral-900/70 px-4 py-2.5 text-sm font-semibold text-neutral-200 transition hover:bg-neutral-800 hover:text-white active:scale-[0.98]"
+            className="inline-flex flex-1 items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500 active:scale-[0.98]"
           >
             Restart
           </button>
-        )}
+        ) : null}
         {onBack && (
           <button
             type="button"
