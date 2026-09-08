@@ -17,3 +17,11 @@
 # file, so this can be cached for as long as the browser will keep it.
 /audio/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The service worker decides when every other cached file is allowed to change,
+# so it must never be served from a cache itself. The default (4 hours) let a
+# deployed update sit invisible for hours: the browser kept revalidating against
+# a stale sw.js, so no new worker installed and the update banner never had a
+# waiting worker to announce.
+/sw.js
+  Cache-Control: no-cache
