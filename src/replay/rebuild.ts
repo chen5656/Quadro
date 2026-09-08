@@ -42,12 +42,20 @@ export interface ReplayVerdict {
  * corrupted or forged code fail here rather than render a nonsense board: an
  * arbitrary byte string is overwhelmingly unlikely to be a legal move sequence.
  */
-export function verifyReplay(
+/**
+ * Run every recorded action, returning the finished game.
+ *
+ * The game carries its own event log, which is what the shared-replay page
+ * needs to show *how* the score was reached — round by round, then the
+ * end-game bonuses — without stepping through the playback first.
+ *
+ * `onStep` fires after each action, for callers building a timeline.
+ */
+export function runReplay(
   replay: Replay,
-  options: { checkScores?: boolean } = {},
-): ReplayVerdict {
+  onStep?: (game: QuadroGame, index: number) => void,
+): QuadroGame {
   const game = replayGame(replay);
-  const timeline: Array<[number, number]> = [];
 
   replay.actions.forEach((id, index) => {
     if (game.isOver()) {
@@ -63,12 +71,24 @@ export function verifyReplay(
         index,
       );
     }
-    timeline.push([game.state.players[0].score, game.state.players[1].score]);
+    onStep?.(game, index);
   });
 
   if (!game.isOver()) {
     throw new ReplayMismatch('SHORT', 'The replay ends before the game does');
   }
+
+  return game;
+}
+
+export function verifyReplay(
+  replay: Replay,
+  options: { checkScores?: boolean } = {},
+): ReplayVerdict {
+  const timeline: Array<[number, number]> = [];
+  const game = runReplay(replay, (g) => {
+    timeline.push([g.state.players[0].score, g.state.players[1].score]);
+  });
 
   const result = game.result();
   const scores: [number, number] = [result.scores[0], result.scores[1]];

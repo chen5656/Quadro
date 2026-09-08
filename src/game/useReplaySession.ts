@@ -54,14 +54,17 @@ export interface ReplayControls {
 const STEP_DELAY_MS = 900;
 
 /**
- * A shared link opens on a still board, which reads as broken to someone who
- * followed it to *watch a game*. Playback starts on its own, after a beat long
- * enough for the `Board` to mount and register its animator — starting before
- * that would skip the first move's animation.
+ * The beat between "watch this" and the first move.
+ *
+ * Long enough for the `Board` to mount and register its animator — starting
+ * before that would skip the first move's animation.
  */
 const AUTOPLAY_DELAY_MS = 700;
 
-export function useReplaySession(replay: Replay): ReplayControls {
+export function useReplaySession(
+  replay: Replay,
+  { autoplay = false }: { autoplay?: boolean } = {},
+): ReplayControls {
   const gameRef = useRef<QuadroGame | null>(null);
   if (gameRef.current === null) gameRef.current = replayGame(replay);
 
@@ -182,15 +185,22 @@ export function useReplaySession(replay: Replay): ReplayControls {
     [bump, playSettlement, replay.actions],
   );
 
-  // Autoplay, once per replay.
+  /**
+   * Start playing once the viewer has asked to watch.
+   *
+   * `autoplay` is the page saying the board is now on screen, not a preference:
+   * `/r/<code>` opens on the result rather than a running board, so nothing
+   * moves until someone presses play.
+   */
   useEffect(() => {
+    if (!autoplay) return;
     const timer = window.setTimeout(() => {
       if (viewerActed.current) return;
       if (gameRef.current?.isOver()) return;
       setPlaying(true);
     }, AUTOPLAY_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [autoplay]);
 
   // ---- playback loop -------------------------------------------------
 

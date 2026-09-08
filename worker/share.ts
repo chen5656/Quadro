@@ -18,6 +18,7 @@
  */
 
 import { decodeReplay, type Replay } from '../src/replay/codec';
+import { verifyReplay } from '../src/replay/rebuild';
 import { ENGINE_VERSION } from '../src/replay/version';
 import { MAX_REPLAY_CHARS } from './replay';
 
@@ -162,6 +163,14 @@ export async function shareReplayPage(request: Request, code: string): Promise<R
   let replay: Replay;
   try {
     replay = decodeReplay(code, ENGINE_VERSION);
+    /**
+     * The score in a replay code is a *claim*; the actions are the evidence.
+     * Re-running them is what stops a hand-edited link from putting a score
+     * that was never played into everyone's feed — the page itself derives
+     * the same way (`src/routes/ReplayPage.tsx`), so a forged link would be
+     * caught there anyway, but only after it had already been seen.
+     */
+    verifyReplay(replay, { checkScores: true });
   } catch {
     // Damaged, or recorded by an engine whose rules have since changed. The
     // SPA explains which; the card stays generic.

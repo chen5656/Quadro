@@ -67,30 +67,82 @@ function renderAt(code: string) {
   );
 }
 
+/**
+ * Open the link and press play, which is what a viewer does before there is
+ * any board to talk about: `/r/<code>` opens on the result card.
+ */
+async function watch(code: string) {
+  const user = userEvent.setup();
+  renderAt(code);
+  await user.click(await screen.findByRole('button', { name: /watch the replay/i }));
+  await screen.findByText(/move 0 \//);
+  return user;
+}
+
 describe('the replay page', () => {
-  it('decodes a shared game and shows its result', async () => {
-    const { code } = codeForGame();
+  it('leads with the score and the opponent, not with a board', async () => {
+    const { code, game } = codeForGame();
+    const result = game.result();
     renderAt(code);
 
-    expect(await screen.findByText(/Replay · 2026-08-28/)).toBeInTheDocument();
-    // The whole game is in the link: no request is made to load it.
-    expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled();
+    // The link is a boast. Whoever opened it came for this line.
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      new RegExp(`Extreme ${result.scores[0]}.${result.scores[1]}`),
+    );
+    expect(screen.getByText('Extreme', { selector: 'div' })).toBeInTheDocument();
+    // Nothing is playing, and no board is on screen to play on.
+    expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/move 0 \//)).not.toBeInTheDocument();
+  });
+
+  it('shows where the points came from, round by round', async () => {
+    const { code, game } = codeForGame();
+    renderAt(code);
+
+    await screen.findByText(/How the score was built/i);
+    // Every round the game actually had, plus the end-game bonus that the
+    // rounds alone never account for.
+    expect(screen.getByText(/Round 1/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`Round ${game.result().rounds}`))).toBeInTheDocument();
+    expect(screen.getByText(/End-game bonus/i)).toBeInTheDocument();
+  });
+
+  it('reports the score the moves produce, not the score the link claims', async () => {
+    // A hand-edited claim is the one thing a shared link makes easy to forge,
+    // and the card is what most people will ever see of it.
+    const { game } = codeForGame();
+    const result = game.result();
+    const forged = encodeReplay({
+      engineVersion: ENGINE_VERSION,
+      seed: game.seed,
+      firstPlayer: game.firstPlayer,
+      humanSeat: 0,
+      aiLevel: 'extreme',
+      scores: [200, 1],
+      puzzleId: '2026-08-28',
+      actions: game.history.map((a) => a.actionId),
+    });
+    renderAt(forged);
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      new RegExp(`Extreme ${result.scores[0]}.${result.scores[1]}`),
+    );
+    expect(screen.queryByText('200')).not.toBeInTheDocument();
   });
 
   it('starts at the opening deal, not the finished position', async () => {
     const { code, game } = codeForGame();
-    renderAt(code);
+    await watch(code);
 
-    await screen.findByText(/Replay · 2026-08-28/);
     expect(screen.getByText(new RegExp(`move 0 / ${game.history.length}`))).toBeInTheDocument();
   });
 
-  it('starts playing on its own, so a shared link is a game and not a still board', async () => {
+  it('plays once asked, without a second press', async () => {
     const { code } = codeForGame();
-    renderAt(code);
+    await watch(code);
 
-    await screen.findByText(/move 0 \//);
-    // Nobody pressed anything: the button flips to Pause and the game advances.
+    // Pressing "Watch the replay" is the whole instruction: the board is not
+    // handed over as a still frame with another button to find.
     await waitFor(
       () => expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument(),
       { timeout: 3000 },
@@ -101,11 +153,9 @@ describe('the replay page', () => {
   });
 
   it('leaves a viewer who steps first in control, without autoplay taking over', async () => {
-    const user = userEvent.setup();
     const { code } = codeForGame();
-    renderAt(code);
+    const user = await watch(code);
 
-    await screen.findByText(/move 0 \//);
     await user.click(screen.getByRole('button', { name: 'Step' }));
     await waitFor(() => expect(screen.getByText(/move 1 \//)).toBeInTheDocument());
 
@@ -115,12 +165,10 @@ describe('the replay page', () => {
   });
 
   it('advances one recorded move at a time', async () => {
-    const user = userEvent.setup();
     const { code } = codeForGame();
-    renderAt(code);
+    const user = await watch(code);
 
-    await screen.findByText(/move 0 \//);
-    // Playback starts on its own, so stepping is what a viewer does *after*
+    // Playback starts once asked, so stepping is what a viewer does *after*
     // taking control: pause first, then step from wherever they paused.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument(), {
       timeout: 3000,
@@ -137,11 +185,9 @@ describe('the replay page', () => {
   });
 
   it('seeks to any move and back to the start', async () => {
-    const user = userEvent.setup();
     const { code } = codeForGame();
-    renderAt(code);
+    const user = await watch(code);
 
-    await screen.findByText(/move 0 \//);
     await user.click(screen.getByRole('button', { name: 'Step' }));
     await waitFor(() => expect(screen.getByText(/move 1 \//)).toBeInTheDocument());
 
@@ -156,7 +202,7 @@ describe('the replay page', () => {
     expect(
       await screen.findByText(/from an older version of the game/i),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /watch the replay/i })).not.toBeInTheDocument();
   });
 
   it('refuses a damaged link rather than drawing a wrong board', async () => {

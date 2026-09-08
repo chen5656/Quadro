@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { HeroBoard, type HeroStep } from '../components/HeroBoard';
+import { ShareSite } from '../components/ShareSite';
 import { Link } from '../router';
 import './Home.css';
 
@@ -37,6 +38,12 @@ export function Home() {
             <Link to="/practice" className="home-secondary">Practice vs AI</Link>
           </div>
           <p className="home-access">Free to play · No download · No sign-in</p>
+          {/* A game people pass on by word of mouth should not make them copy
+              the address bar to do it. */}
+          <ShareSite
+            label="Share QUADRO with a friend"
+            className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/60 px-3.5 py-2 text-sm font-medium text-neutral-300 transition hover:border-neutral-600 hover:bg-neutral-800 hover:text-white"
+          />
         </div>
 
         <figure className="home-demo" aria-label="Game preview: colored tokens move from shared nodes into rows, then onto a five-by-five memory grid to score points.">
