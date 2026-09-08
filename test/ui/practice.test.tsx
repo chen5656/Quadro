@@ -66,6 +66,32 @@ describe('practice setup', () => {
     window.history.pushState({}, '', '/practice');
   });
 
+  it('starts the game straight away for a challenge link', async () => {
+    // The "beat my score" link on a shared replay names the deal and the
+    // opponent. Whoever followed it has already chosen; the setup form would
+    // be asking the same question a second time.
+    window.history.pushState({}, '', '/practice?seed=98765&ai=hard&play=1');
+    render(
+      <RouterProvider>
+        <Practice />
+      </RouterProvider>,
+    );
+    await waitFor(() => expect(screen.queryByLabelText('Seed')).not.toBeInTheDocument());
+    expect(screen.getByText(/98765/)).toBeInTheDocument();
+    window.history.pushState({}, '', '/practice');
+  });
+
+  it('still opens the form for a seed link that did not ask to play', async () => {
+    window.history.pushState({}, '', '/practice?seed=98765');
+    render(
+      <RouterProvider>
+        <Practice />
+      </RouterProvider>,
+    );
+    expect(screen.getByLabelText('Seed')).toHaveValue('98765');
+    window.history.pushState({}, '', '/practice');
+  });
+
   it('rejects a seed outside the valid range and blocks the start button', async () => {
     const user = userEvent.setup();
     render(<Practice />);

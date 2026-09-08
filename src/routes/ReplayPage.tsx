@@ -137,12 +137,12 @@ function ReplayView({ replay, code }: { replay: Replay; code: string }) {
     }
     if (replay.puzzleId) {
       return {
-        href: `/practice?seed=${seedForPuzzle(replay.puzzleId)}&ai=${replay.aiLevel}`,
+        href: `/practice?seed=${seedForPuzzle(replay.puzzleId)}&ai=${replay.aiLevel}&play=1`,
         note: `That deal is from ${replay.puzzleId}, so it opens in Practice — past days are no longer ranked.`,
       };
     }
     return {
-      href: `/practice?seed=${replay.seed}&ai=${replay.aiLevel}`,
+      href: `/practice?seed=${replay.seed}&ai=${replay.aiLevel}&play=1`,
       note: 'Practice games are never ranked, but this is the same deal.',
     };
   }, [replay.puzzleId, replay.aiLevel, replay.seed]);
@@ -318,7 +318,7 @@ function ScoreCard({
             to={challenge.href}
             className="rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
           >
-            See if you can beat me
+            Beat my score
           </Link>
           {share}
         </div>

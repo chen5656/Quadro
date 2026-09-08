@@ -40,9 +40,29 @@ interface Setup {
   seed: number;
 }
 
+/**
+ * The setup a challenge link carries, or null for an ordinary visit.
+ *
+ * A link that says "beat my score" already names the deal and the opponent —
+ * whoever followed it has chosen. Putting the setup form in front of them
+ * asks the same question twice and loses the deal if they answer it
+ * differently. `play=1` is what distinguishes that link from a shared or
+ * bookmarked `?seed=`, which should still open the form with the seed filled
+ * in rather than starting a game nobody asked for.
+ */
+function setupFromLink(search: string): Setup | null {
+  const params = new URLSearchParams(
+    search || (typeof window !== 'undefined' ? window.location.search : ''),
+  );
+  if (params.get('play') !== '1') return null;
+  const seed = params.get('seed');
+  if (seed === null || !isValidSeed(seed)) return null;
+  return { level: resolvePracticeLevel(search), seed: Number(seed) };
+}
+
 export function Practice() {
   const { search } = useRouter();
-  const [setup, setSetup] = useState<Setup | null>(null);
+  const [setup, setSetup] = useState<Setup | null>(() => setupFromLink(search));
 
   // The ⚙ menu switches the opponent by writing `?ai=`; pick it up and restart
   // the running game at the new difficulty (the key change remounts the board).

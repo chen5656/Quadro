@@ -8,6 +8,8 @@
 
 import { useState } from 'react';
 
+import { SITE_NAME } from '../site';
+
 export function ShareButton({
   url,
   text,
@@ -26,7 +28,7 @@ export function ShareButton({
   const [failed, setFailed] = useState(false);
 
   const onClick = async () => {
-    const data = { title: 'NODRA', text, url };
+    const data = { title: SITE_NAME, text, url };
     if (typeof navigator === 'undefined') return;
     if (navigator.share && navigator.canShare?.(data)) {
       try {

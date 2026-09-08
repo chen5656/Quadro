@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { HeroBoard, type HeroStep } from '../components/HeroBoard';
 import { ShareSite } from '../components/ShareSite';
+import { SITE_NAME } from '../site';
 import { Link } from '../router';
 import './Home.css';
 
@@ -41,7 +42,7 @@ export function Home() {
           {/* A game people pass on by word of mouth should not make them copy
               the address bar to do it. */}
           <ShareSite
-            label="Share QUADRO with a friend"
+            label={`Share ${SITE_NAME} with a friend`}
             className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/60 px-3.5 py-2 text-sm font-medium text-neutral-300 transition hover:border-neutral-600 hover:bg-neutral-800 hover:text-white"
           />
         </div>

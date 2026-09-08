@@ -8,11 +8,17 @@
  */
 
 import { ShareButton } from './ShareButton';
+import { SITE_NAME } from '../site';
 
-const PITCH =
-  'QUADRO — a free tile-drafting strategy game against an AI opponent. One deal a day, the same for everyone.';
+const PITCH = `${SITE_NAME} — a free tile-drafting strategy game against an AI opponent. One deal a day, the same for everyone.`;
 
-export function ShareSite({ label = 'Share QUADRO', className }: { label?: string; className?: string }) {
+export function ShareSite({
+  label = `Share ${SITE_NAME}`,
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <ShareButton
       url={typeof window === 'undefined' ? 'https://acgame.win' : window.location.origin}

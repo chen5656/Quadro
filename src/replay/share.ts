@@ -16,6 +16,7 @@
 import type { QuadroGame } from '../engine';
 import { type Replay, type ReplayAiLevel, encodeReplay } from './codec';
 import { ENGINE_VERSION } from './version';
+import { SITE_NAME } from '../site';
 
 export const REPLAY_PATH = '/r';
 
@@ -66,7 +67,7 @@ export function recapText(
   const theirs = replay.scores[1 - replay.humanSeat];
   const margin = mine - theirs;
   const lines = [
-    `QUADRO ${replay.puzzleId ?? 'Practice'} · ${options.levelLabel}`,
+    `${SITE_NAME} ${replay.puzzleId ?? 'Practice'} · ${options.levelLabel}`,
     `${mine}–${theirs} (${margin >= 0 ? '+' : ''}${margin})${
       options.elapsedMs === undefined ? '' : ` · ${formatDuration(options.elapsedMs)}`
     }${

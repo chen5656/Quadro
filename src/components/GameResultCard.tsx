@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LEVEL_LABELS, type AgentLevel } from '../ai';
 import { RobotAvatar } from './RobotAvatar';
+import { SITE_NAME } from '../site';
 import { BonusTable } from './BonusTable';
 import { formatElapsed } from './Timer';
 import type { SubmissionState } from '../game/useSubmission';
@@ -173,7 +174,7 @@ export function GameResultCard({
   const handleShareClick = async () => {
     if (!share) return;
     const shareData = {
-      title: 'NODRA — Daily Challenge',
+      title: `${SITE_NAME} — Daily Challenge`,
       text: share.text,
       url: share.url,
     };

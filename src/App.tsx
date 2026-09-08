@@ -163,7 +163,6 @@ export function App() {
               Terms
             </a>
             <ShareSite
-              label="Share QUADRO"
               className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-800 px-2.5 py-1 text-xs text-neutral-400 transition hover:border-neutral-700 hover:text-neutral-200"
             />
           </div>
