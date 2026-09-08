@@ -15,6 +15,7 @@ import { getLeaderboard } from '../api/client';
 import { useIdentity } from '../auth';
 import { Board } from '../components/Board';
 import { GameResultCard } from '../components/GameResultCard';
+import { FocusResultPanel } from '../components/FocusResultPanel';
 import { matchBreakdown } from '../game/breakdown';
 import { LevelPickerModal } from '../components/LevelPickerModal';
 import { encodeReplay } from '../replay/codec';
@@ -270,6 +271,22 @@ function DailyAttempt({
       {session.status !== 'game-over' && !isRanked(level) && (
         <UnrankedBanner level={level} onSwitchToRanked={() => onSelectLevel(RANKED_LEVEL)} />
       )}
+      {session.status === 'game-over' && style === 'focus' && (
+        <FocusResultPanel
+          humanWon={session.humanWon}
+          draw={session.game.result().draw}
+          elapsedMs={session.elapsedMs}
+          aiLevel={level}
+          humanScore={session.game.result().scores[HUMAN_SEAT]}
+          opponentScore={session.game.result().scores[1 - HUMAN_SEAT]}
+          breakdown={matchBreakdown(session.game.events, HUMAN_SEAT)}
+          onNewGame={onPlayAgain}
+          onRestart={restart}
+          onBack={() => navigate('/')}
+          backLabel="Back to Home"
+        />
+      )}
+
       {session.status === 'game-over' && style !== 'focus' && (
         <GameResultCard
           humanWon={session.humanWon}
@@ -282,6 +299,7 @@ function DailyAttempt({
           submissionState={submission.state}
           ranked={isRanked(level)}
           onPlayAgain={onPlayAgain}
+          onRestart={restart}
           onBack={() => navigate('/')}
           backLabel="Back to Home"
           share={share}
@@ -293,15 +311,17 @@ function DailyAttempt({
         />
       )}
 
-      <Board
-        session={session}
-        humanLabel="You"
-        opponentLabel={opponentLabel}
-        onUndo={handleUndo}
-        topRight={topRight}
-        onChangeLevel={() => setShowSettings(true)}
-        title={`Daily Challenge (${puzzleId})`}
-      />
+      {session.status !== 'game-over' && (
+        <Board
+          session={session}
+          humanLabel="You"
+          opponentLabel={opponentLabel}
+          onUndo={handleUndo}
+          topRight={topRight}
+          onChangeLevel={() => setShowSettings(true)}
+          title={`Daily Challenge (${puzzleId})`}
+        />
+      )}
 
       <LevelPickerModal
         isOpen={showSettings}

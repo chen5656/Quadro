@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LEVEL_LABELS, type AgentLevel } from '../ai';
 import { RobotAvatar } from './RobotAvatar';
+import { share as openShareSheet } from '../share';
 import { SITE_NAME } from '../site';
 import { BonusTable } from './BonusTable';
 import { formatElapsed } from './Timer';
@@ -57,6 +58,8 @@ export interface GameResultCardProps {
    */
   share?: { url: string; text: string } | null;
   onPlayAgain: () => void;
+  /** Replay the same deal. Omitted hides the Restart control. */
+  onRestart?: () => void;
   onWatchReplay?: () => void;
   onBack?: () => void;
   backLabel?: string;
@@ -103,6 +106,7 @@ export function GameResultCard({
   ranked = isRankedLevel(aiLevel),
   share = null,
   onPlayAgain,
+  onRestart,
   onWatchReplay,
   onBack,
   backLabel = 'Back to Home',
@@ -173,18 +177,15 @@ export function GameResultCard({
 
   const handleShareClick = async () => {
     if (!share) return;
-    const shareData = {
-      title: `${SITE_NAME} — Daily Challenge`,
-      text: share.text,
-      url: share.url,
-    };
-    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.(shareData)) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch {
-        // Share dismissed or failed, fallback to copy
-      }
+    // Share dismissed, or no native sheet: fall back to the clipboard.
+    if (
+      await openShareSheet({
+        title: `${SITE_NAME} — Daily Challenge`,
+        text: share.text,
+        url: share.url,
+      })
+    ) {
+      return;
     }
     // Only claim the link was copied once the write has actually resolved: a
     // refused clipboard used to leave the button saying "Copied!" over an
@@ -434,6 +435,27 @@ export function GameResultCard({
             </button>
 
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+              {onRestart && (
+                <button
+                  type="button"
+                  onClick={onRestart}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-700 bg-neutral-900/70 px-4 py-2.5 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-800 hover:text-white active:scale-[0.98]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 stroke-current"
+                    fill="none"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  <span>Restart</span>
+                </button>
+              )}
               {onWatchReplay && (
                 <button
                   type="button"

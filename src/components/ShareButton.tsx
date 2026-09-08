@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 
+import { share } from '../share';
 import { SITE_NAME } from '../site';
 
 export function ShareButton({
@@ -28,16 +29,9 @@ export function ShareButton({
   const [failed, setFailed] = useState(false);
 
   const onClick = async () => {
-    const data = { title: SITE_NAME, text, url };
     if (typeof navigator === 'undefined') return;
-    if (navigator.share && navigator.canShare?.(data)) {
-      try {
-        await navigator.share(data);
-        return;
-      } catch {
-        // Dismissed, or the sheet failed. Fall through to the clipboard.
-      }
-    }
+    // Dismissed, or no sheet at all: fall through to the clipboard.
+    if (await share({ title: SITE_NAME, text, url })) return;
     // A clipboard write can be refused outright — an insecure origin, or a
     // browser that wants a permission this click did not carry. Saying
     // "Copied!" when nothing was copied is worse than saying nothing, so the
