@@ -131,33 +131,65 @@ export function generateDailyBotScores(puzzleId: string): BotScore[] {
   const results: BotScore[] = [];
 
   function generateScore(bot: BotProfile, aiLevel: AiLevel): BotScore {
-    // Generate realistic Azul final score and margin based on skill tier
-    let targetDiff: number;
+    let finalScore: number;
+    let opponentScore: number;
     let baseTimeSec: number;
 
-    switch (bot.skillTier) {
-      case 'top':
-        targetDiff = 12 + Math.floor(rng() * 14); // +12 to +25
-        baseTimeSec = 240 + Math.floor(rng() * 200); // 4 - 7 mins
-        break;
-      case 'strong':
-        targetDiff = 4 + Math.floor(rng() * 12); // +4 to +15
-        baseTimeSec = 300 + Math.floor(rng() * 240); // 5 - 9 mins
-        break;
-      case 'average':
-        targetDiff = -3 + Math.floor(rng() * 10); // -3 to +6
-        baseTimeSec = 360 + Math.floor(rng() * 300); // 6 - 11 mins
-        break;
-      case 'casual':
-      default:
-        targetDiff = -10 + Math.floor(rng() * 10); // -10 to -1
-        baseTimeSec = 420 + Math.floor(rng() * 360); // 7 - 13 mins
-        break;
+    if (aiLevel === 'expert') {
+      // Expert board: larger margins and wider spread.
+      // Top bots reach 100+ vs ~50s AI, casual bots score 50+ vs 10s AI.
+      switch (bot.skillTier) {
+        case 'top':
+          finalScore = 100 + Math.floor(rng() * 16); // 100..115
+          opponentScore = 50 + Math.floor(rng() * 10); // 50..59
+          baseTimeSec = 220 + Math.floor(rng() * 180); // 3.5 - 6.5 mins
+          break;
+        case 'strong':
+          finalScore = 80 + Math.floor(rng() * 15); // 80..94
+          opponentScore = 36 + Math.floor(rng() * 12); // 36..47
+          baseTimeSec = 260 + Math.floor(rng() * 200); // 4 - 7.5 mins
+          break;
+        case 'average':
+          finalScore = 65 + Math.floor(rng() * 14); // 65..78
+          opponentScore = 24 + Math.floor(rng() * 14); // 24..37
+          baseTimeSec = 320 + Math.floor(rng() * 240); // 5 - 9 mins
+          break;
+        case 'casual':
+        default:
+          finalScore = 50 + Math.floor(rng() * 10); // 50..59
+          opponentScore = 12 + Math.floor(rng() * 8); // 12..19 (AI in the 10s)
+          baseTimeSec = 380 + Math.floor(rng() * 300); // 6 - 11 mins
+          break;
+      }
+    } else {
+      // Generate realistic Azul final score and margin based on skill tier for master/extreme
+      let targetDiff: number;
+
+      switch (bot.skillTier) {
+        case 'top':
+          targetDiff = 12 + Math.floor(rng() * 14); // +12 to +25
+          baseTimeSec = 240 + Math.floor(rng() * 200); // 4 - 7 mins
+          break;
+        case 'strong':
+          targetDiff = 4 + Math.floor(rng() * 12); // +4 to +15
+          baseTimeSec = 300 + Math.floor(rng() * 240); // 5 - 9 mins
+          break;
+        case 'average':
+          targetDiff = -3 + Math.floor(rng() * 10); // -3 to +6
+          baseTimeSec = 360 + Math.floor(rng() * 300); // 6 - 11 mins
+          break;
+        case 'casual':
+        default:
+          targetDiff = -10 + Math.floor(rng() * 10); // -10 to -1
+          baseTimeSec = 420 + Math.floor(rng() * 360); // 7 - 13 mins
+          break;
+      }
+
+      // Opponent score typical 50 - 75
+      opponentScore = 52 + Math.floor(rng() * 20);
+      finalScore = opponentScore + targetDiff;
     }
 
-    // Opponent score typical 50 - 75
-    const opponentScore = 52 + Math.floor(rng() * 20);
-    const finalScore = opponentScore + targetDiff;
     const elapsedMs = baseTimeSec * 1000 + Math.floor(rng() * 999);
     const rounds = 5 + Math.floor(rng() * 2); // 5 or 6 rounds
     const attempts = 1 + Math.floor(rng() * 3); // 1 to 3 attempts

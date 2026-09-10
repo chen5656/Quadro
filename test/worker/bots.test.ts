@@ -35,6 +35,12 @@ describe('synthetic house bots', () => {
       expect(score.rounds).toBeGreaterThanOrEqual(5);
       expect(score.attempts).toBeGreaterThanOrEqual(1);
     }
+
+    // Expert board has wide score spread: 100+ vs 50+ (top) and 50+ vs 10s (casual)
+    const hasTopExpert = expert.some((s) => s.finalScore >= 100 && s.opponentScore >= 50);
+    const hasLowAiExpert = expert.some((s) => s.finalScore >= 50 && s.opponentScore >= 10 && s.opponentScore < 20);
+    expect(hasTopExpert).toBe(true);
+    expect(hasLowAiExpert).toBe(true);
   });
 
   it('seeds bots into D1 with hidden is_bot = 1 flag and serves them on leaderboard', async () => {
