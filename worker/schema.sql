@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS scores (
   -- 1 when the Worker re-ran `replay` and the moves produced the posted score.
   verified      INTEGER NOT NULL DEFAULT 0,
   attempts      INTEGER NOT NULL DEFAULT 1,
+  is_bot        INTEGER NOT NULL DEFAULT 0,
   created_at    INTEGER NOT NULL,          -- epoch ms, server-assigned
   updated_at    INTEGER NOT NULL,
   UNIQUE (puzzle_id, user_id, ai_level)

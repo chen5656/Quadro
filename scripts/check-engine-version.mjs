@@ -35,7 +35,8 @@ function currentHash() {
   const hash = createHash('sha256');
   for (const file of WATCHED) {
     hash.update(file);
-    hash.update(readFileSync(join(root, file)));
+    const content = readFileSync(join(root, file), 'utf8').replace(/\r\n/g, '\n');
+    hash.update(Buffer.from(content, 'utf8'));
   }
   return hash.digest('hex').slice(0, 16);
 }

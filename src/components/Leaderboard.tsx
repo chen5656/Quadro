@@ -199,9 +199,12 @@ function Body({
               <th scope="col" className="w-16 px-1 pb-1 text-right">
                 Time
               </th>
-              <th scope="col" className="w-12 px-1 pb-1 text-right">
-                <span className="sr-only">Replay</span>
-              </th>
+              {/* Replay column temporarily hidden (will be enabled later) */}
+              {false && (
+                <th scope="col" className="w-12 px-1 pb-1 text-right">
+                  <span className="sr-only">Replay</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800">
@@ -254,21 +257,24 @@ function Body({
                   <td className="px-1 py-1.5 text-right font-mono text-xs tabular-nums text-neutral-400">
                     {formatElapsedSeconds(row.elapsed_ms)}
                   </td>
-                  <td className="px-1 py-1.5 text-right">
-                    {row.replay ? (
-                      <Link
-                        to={replayHref(row.replay)}
-                        className="inline-flex items-center justify-center rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-200 hover:bg-sky-600 hover:text-white transition-colors"
-                        title="Watch replay"
-                      >
-                        ▶
-                      </Link>
-                    ) : (
-                      <span className="text-neutral-700 text-xs select-none" title="No replay available">
-                        -
-                      </span>
-                    )}
-                  </td>
+                  {/* Replay column temporarily hidden */}
+                  {false && (
+                    <td className="px-1 py-1.5 text-right">
+                      {row.replay ? (
+                        <Link
+                          to={replayHref(row.replay as string)}
+                          className="inline-flex items-center justify-center rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-200 hover:bg-sky-600 hover:text-white transition-colors"
+                          title="Watch replay"
+                        >
+                          ▶
+                        </Link>
+                      ) : (
+                        <span className="text-neutral-700 text-xs select-none" title="No replay available">
+                          -
+                        </span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

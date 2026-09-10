@@ -14,6 +14,7 @@ import { AI_LEVELS, DEFAULT_AI_LEVEL, isAiLevel, leaderboard } from './leaderboa
 import { history } from './history';
 import { deleteMe, submitScore } from './scores';
 import { replayCodeFrom, shareReplayPage } from './share';
+import { seedOrUpdateBots } from './bots';
 
 /**
  * The service worker served at `https://www.acgame.win/sw.js`.
@@ -127,9 +128,14 @@ export default {
 
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(
-      purgeOldRows(env.DB).then((deleted) => {
-        console.log(JSON.stringify({ level: 'info', message: 'retention sweep', ...deleted }));
-      }),
+      Promise.all([
+        purgeOldRows(env.DB).then((deleted) => {
+          console.log(JSON.stringify({ level: 'info', message: 'retention sweep', ...deleted }));
+        }),
+        seedOrUpdateBots(env.DB, currentPuzzleId()).then((count) => {
+          console.log(JSON.stringify({ level: 'info', message: 'seeded house bots', count }));
+        }),
+      ]),
     );
   },
 } satisfies ExportedHandler<Env>;
@@ -222,6 +228,12 @@ async function route(request: Request, env: Env): Promise<Response> {
     const session = await requireSession(request, env);
     await deleteAvatars(env, session.userId).catch(() => {});
     return deleteMe(env.DB, session);
+  }
+
+  if (path === '/api/admin/seed-bots' && (request.method === 'POST' || request.method === 'GET')) {
+    const puzzleId = url.searchParams.get('puzzle_id') ?? currentPuzzleId();
+    const count = await seedOrUpdateBots(env.DB, puzzleId);
+    return json({ seeded: true, puzzle_id: puzzleId, count });
   }
 
   return fail(404, 'NOT_FOUND', 'No such endpoint');
