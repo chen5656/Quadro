@@ -12,6 +12,7 @@ import { LEVELS, LEVEL_LABELS, type AgentLevel } from '../ai';
 import { Board } from '../components/Board';
 import { LevelPickerModal } from '../components/LevelPickerModal';
 import { GameResultCard } from '../components/GameResultCard';
+import { FocusResultPanel } from '../components/FocusResultPanel';
 import { matchBreakdown } from '../game/breakdown';
 import { RobotAvatar } from '../components/RobotAvatar';
 import { useGameStyle } from '../context/GameStyleContext';
@@ -207,6 +208,13 @@ function PracticeGame({
   const [showSettings, setShowSettings] = useState(false);
   const opponentLabel = LEVEL_LABELS[setup.level];
 
+  /** A fresh deal, which is what "new game" means in Practice. */
+  const newDeal = useCallback(() => {
+    const next = randomSeed();
+    storage.setPracticeSeed(String(next));
+    onNewDeal(next);
+  }, [onNewDeal]);
+
   const topRight = (
     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
       <span className="azul-meta text-xs text-neutral-500 font-mono mr-1">Seed {deal}</span>
@@ -219,11 +227,7 @@ function PracticeGame({
       </button>
       <button
         type="button"
-        onClick={() => {
-          const next = randomSeed();
-          storage.setPracticeSeed(String(next));
-          onNewDeal(next);
-        }}
+        onClick={newDeal}
         className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800"
       >
         New deal
@@ -258,6 +262,22 @@ function PracticeGame({
 
   return (
     <div className="flex w-full flex-col gap-3">
+      {result && style === 'focus' && (
+        <FocusResultPanel
+          humanWon={session.humanWon}
+          draw={result.draw}
+          elapsedMs={session.elapsedMs}
+          aiLevel={setup.level}
+          humanScore={result.scores[session.humanSeat]}
+          opponentScore={result.scores[1 - session.humanSeat]}
+          breakdown={matchBreakdown(session.game.events, session.humanSeat)}
+          onNewGame={newDeal}
+          onRestart={session.restart}
+          onBack={onExit}
+          backLabel="Change setup"
+        />
+      )}
+
       {result && style !== 'focus' && (
         <GameResultCard
           humanWon={session.humanWon}
@@ -268,7 +288,8 @@ function PracticeGame({
           opponentScore={result.scores[1 - session.humanSeat]}
           breakdown={matchBreakdown(session.game.events, session.humanSeat)}
           ranked={false}
-          onPlayAgain={session.restart}
+          onPlayAgain={newDeal}
+          onRestart={session.restart}
           onBack={onExit}
           backLabel="Change setup"
           share={share}
@@ -277,14 +298,16 @@ function PracticeGame({
         />
       )}
 
-      <Board
-        session={session}
-        humanLabel="You"
-        opponentLabel={opponentLabel}
-        topRight={topRight}
-        onChangeLevel={() => setShowSettings(true)}
-        title="Practice"
-      />
+      {!result && (
+        <Board
+          session={session}
+          humanLabel="You"
+          opponentLabel={opponentLabel}
+          topRight={topRight}
+          onChangeLevel={() => setShowSettings(true)}
+          title="Practice"
+        />
+      )}
 
       <LevelPickerModal
         isOpen={showSettings}

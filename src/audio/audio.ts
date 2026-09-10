@@ -211,12 +211,11 @@ class Audio {
         this.failed = true;
         return null;
       }
-      // Without this, iOS silences Web Audio whenever the ringer switch is
-      // off — the phone treats the page as ambient noise rather than something
-      // the player asked to hear. Safari 17+; harmless everywhere else.
-      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
-      if (session) session.type = 'playback';
-
+      // The audio session is left at the browser's default on purpose. Asking
+      // for 'playback' would keep the ringer switch from silencing the game,
+      // but it also grants the page background playback: installed to the home
+      // screen, the bed went on playing long after the app was dismissed. A
+      // game is ambient sound, so it stops when the game leaves the screen.
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
       this.master.gain.value = 1;
