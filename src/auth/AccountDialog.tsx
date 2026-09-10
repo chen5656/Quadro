@@ -12,7 +12,7 @@ import { Dialog, DialogError } from './Dialog';
 import { Field } from './SignInDialog';
 import { PROVIDER_LABELS, authClient, signIn, signOut, updateUser, useSession } from './client';
 import { displayNameFor, useAuthProviders } from './identity';
-import { Link, useRouter } from '../router';
+import { Link } from '../router';
 
 const MAX_AVATAR_BYTES = 1_048_576;
 const AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
@@ -41,7 +41,6 @@ export function AccountDialog({ onClose }: { onClose: () => void }) {
     };
   }, [user]);
 
-  const { navigate } = useRouter();
 
   if (!user) {
     onClose();
@@ -77,11 +76,7 @@ export function AccountDialog({ onClose }: { onClose: () => void }) {
         <div className="border-t border-neutral-800 pt-4">
           <Link
             to="/history"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/history');
-              onClose();
-            }}
+            onClick={onClose}
             className="flex items-center justify-between rounded border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 transition-colors hover:bg-neutral-800 hover:text-white"
           >
             <span>My history</span>

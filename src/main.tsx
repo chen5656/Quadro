@@ -9,12 +9,12 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <GameStyleProvider>
-        <RouterProvider>
+    <RouterProvider>
+      <AuthProvider>
+        <GameStyleProvider>
           <App />
-        </RouterProvider>
-      </GameStyleProvider>
-    </AuthProvider>
+        </GameStyleProvider>
+      </AuthProvider>
+    </RouterProvider>
   </StrictMode>,
 );
