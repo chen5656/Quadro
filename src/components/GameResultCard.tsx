@@ -494,21 +494,6 @@ export function GameResultCard({
                   <span>Watch replay</span>
                 </button>
               )}
-              <Link
-                to={`/leaderboard?ai=${aiLevel}`}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-700 bg-neutral-900/70 px-4 py-2.5 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-800 hover:text-white"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 stroke-current"
-                  fill="none"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M5 20V10M12 20V4M19 20v-6" />
-                </svg>
-                <span>Leaderboard</span>
-              </Link>
             </div>
 
             <p className="pt-1 text-center text-xs italic text-neutral-500">
@@ -516,33 +501,26 @@ export function GameResultCard({
             </p>
           </div>
 
-          {/* Where the run stands on today's board. */}
+          {/* Score save status */}
           <div className="order-5 flex min-h-[44px] w-full max-w-2xl items-center justify-center rounded-xl border border-neutral-800/80 bg-neutral-900/60 px-4 py-2.5 text-center text-xs text-neutral-300 shadow-inner backdrop-blur-sm">
             {submissionState?.kind === 'submitting' && (
               <span className="animate-pulse text-sky-300">
-                Posting your score to today&apos;s leaderboard…
+                Saving your match score…
               </span>
             )}
             {submissionState?.kind === 'posted' && (
               <span className="text-neutral-200">
-                🎉 Personal best — <span className="font-bold text-sky-300">Rank {submissionState.rank}</span>{' '}
-                of {submissionState.totalEntries} today on{' '}
-                <Link
-                  to={`/leaderboard?ai=${aiLevel}`}
-                  className="font-semibold text-sky-400 underline hover:text-sky-300"
-                >
-                  {opponentName} Board
-                </Link>
+                🎉 Match recorded to your <Link to="/history" className="font-semibold text-sky-400 underline hover:text-sky-300">history</Link>!
               </span>
             )}
             {submissionState?.kind === 'not-improved' && (
               <span className="text-neutral-400">
-                Completed! Previous best was higher, so board keeps existing record.
+                Completed! Previous best score kept in history.
               </span>
             )}
             {submissionState?.kind === 'awaiting-auth' && (
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <span>Sign in to record your score:</span>
+                <span>Sign in to save your score to history:</span>
                 <button
                   type="button"
                   onClick={onOpenSignIn}
@@ -568,7 +546,7 @@ export function GameResultCard({
             )}
             {!submissionState && (
               <span className="text-neutral-400">
-                {ranked ? 'Scores recorded for ranked match' : 'Practice mode — unrecorded match'}
+                {ranked ? 'Scores recorded' : 'Practice mode — unrecorded match'}
               </span>
             )}
           </div>

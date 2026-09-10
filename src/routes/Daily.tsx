@@ -11,7 +11,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LEVEL_LABELS, type AgentLevel } from '../ai';
 import { useMusic } from '../audio';
-import { getLeaderboard } from '../api/client';
 import { useIdentity } from '../auth';
 import { Board } from '../components/Board';
 import { GameResultCard } from '../components/GameResultCard';
@@ -25,7 +24,6 @@ import { useGameStyle } from '../context/GameStyleContext';
 import { HUMAN_SEAT, newDailyGame, puzzleIdFor } from '../daily/puzzle';
 import {
   DAILY_LEVELS,
-  RANKED_LEVELS as DAILY_RANKED_LEVELS,
   dailyHrefFor,
   isRankedLevel,
   resolveDailyLevel,
@@ -37,18 +35,10 @@ import type { SubmissionState } from '../game/useSubmission';
 import { useRouter } from '../router';
 import { storage } from '../storage';
 
-const RANKED_LEVELS = DAILY_RANKED_LEVELS;
-
-/** The board the Daily leads with, and what an unranked game is nudged toward. */
+/** The difficulty the Daily leads with, and what an unranked game is nudged toward. */
 const RANKED_LEVEL: AgentLevel = 'expert';
 
 const isRanked = isRankedLevel;
-
-/** "Extreme, Master and Expert" — the ranked levels, for prose. */
-function rankedLevelList(): string {
-  const labels = RANKED_LEVELS.map((l) => LEVEL_LABELS[l]);
-  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
-}
 
 export function Daily() {
   const { search, navigate } = useRouter();
@@ -125,32 +115,9 @@ function DailyAttempt({
   const identity = useIdentity();
   const submission = useSubmission(identity);
   const { navigate } = useRouter();
-  const [boardRefresh, setBoardRefresh] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const [totalEntries, setTotalEntries] = useState<number | null>(null);
   const { style } = useGameStyle();
   const opponentLabel = LEVEL_LABELS[level];
-
-  // Fetch leaderboard player count for current puzzle & level
-  useEffect(() => {
-    let active = true;
-    async function loadCount() {
-      try {
-        const data = await getLeaderboard(puzzleId, level);
-        if (active) {
-          setTotalEntries(data.total_entries);
-        }
-      } catch {
-        if (active && totalEntries === null) {
-          setTotalEntries(0);
-        }
-      }
-    }
-    void loadCount();
-    return () => {
-      active = false;
-    };
-  }, [puzzleId, level, boardRefresh]);
 
   const newGame = useCallback(() => newDailyGame(puzzleId), [puzzleId]);
   // No seed: the session draws one per attempt, so reopening the day's deal
@@ -208,11 +175,6 @@ function DailyAttempt({
     // `submission` is rebuilt every render; the completion edge is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, puzzleId, level]);
-
-  // Once a time is posted, the board the player is looking at is out of date.
-  useEffect(() => {
-    if (submission.state.kind === 'posted') setBoardRefresh((n) => n + 1);
-  }, [submission.state.kind]);
 
   /**
    * The link and recap for the game just finished. Rebuilt only when the game
@@ -325,7 +287,7 @@ function DailyAttempt({
         selected={level}
         onSelect={onSelectLevel}
         rankedOf={isRanked}
-        description={`Select the opponent difficulty for the Daily Challenge. Only ${rankedLevelList()} games are posted to the leaderboard.`}
+        description={`Select the opponent difficulty for the Daily Challenge.`}
       />
     </div>
   );
@@ -339,11 +301,11 @@ function DailyAttempt({
  */
 function RecoveredSubmissionNotice({ state }: { state: SubmissionState }) {
   let text: string | null = null;
-  if (state.kind === 'submitting') text = 'Posting the score you played before signing in…';
+  if (state.kind === 'submitting') text = 'Saving the score you played before signing in…';
   else if (state.kind === 'posted')
-    text = `Your earlier score is on the board — rank ${state.rank} of ${state.totalEntries} today.`;
+    text = `Your earlier score was recorded to your history.`;
   else if (state.kind === 'not-improved')
-    text = 'Your earlier score was not higher than your previous best, so the board is unchanged.';
+    text = 'Your earlier score was not higher than your previous best.';
   else if (state.kind === 'failed') text = state.message;
   if (!text) return null;
 
@@ -354,13 +316,6 @@ function RecoveredSubmissionNotice({ state }: { state: SubmissionState }) {
   );
 }
 
-
-/**
- * Says the quiet part out loud, for the whole game rather than only at the end:
- * the default opponent is Easy and the board only ranks Extreme, so without
- * this a player finishes a good game and finds out too late that it counted
- * for nothing.
- */
 function UnrankedBanner({
   level,
   onSwitchToRanked,
@@ -382,14 +337,14 @@ function UnrankedBanner({
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex w-fit max-w-full flex-wrap items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900/90 px-3.5 py-1.5 text-xs text-neutral-300 shadow-sm backdrop-blur-sm sm:text-sm">
         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-xs">
-          🏆
+          🎯
         </span>
         <span className="font-semibold text-neutral-200">
-          {LEVEL_LABELS[level]} games aren&apos;t ranked
+          {LEVEL_LABELS[level]} games aren&apos;t recorded
         </span>
         <span className="text-neutral-500">•</span>
         <span className="text-neutral-400">
-          Expert, Master &amp; Extreme count toward today&apos;s leaderboard.
+          Expert, Master &amp; Extreme count toward your Daily history.
         </span>
         <button
           type="button"

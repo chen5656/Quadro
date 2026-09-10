@@ -6,7 +6,6 @@ import { useAttemptRunning } from './game/attemptGuard';
 import { AuthControl } from './auth';
 import { Daily } from './routes/Daily';
 import { Home } from './routes/Home';
-import { LeaderboardPage } from './routes/LeaderboardPage';
 import { HistoryPage } from './routes/HistoryPage';
 import { Practice } from './routes/Practice';
 import { ReplayPage } from './routes/ReplayPage';
@@ -19,27 +18,6 @@ import { useMusic } from './audio';
 
 /** Routes that are a game surface: on phones and tablets they own the screen. */
 const GAME_ROUTES = new Set(['/tutorial', '/practice', '/daily']);
-
-/** The cup that marks the board; the Daily no longer carries one of its own. */
-function TrophyIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="h-4 w-4 stroke-current text-amber-400"
-      fill="none"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-      <path d="M4 22h16" />
-      <path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34" />
-      <path d="M6 4h12v7a6 6 0 0 1-12 0V4z" />
-    </svg>
-  );
-}
 
 function LogoIcon() {
   return (
@@ -61,17 +39,14 @@ function Nav() {
   const { route } = useRouter();
   const { style } = useGameStyle();
   const item = (
-    to: '/tutorial' | '/daily' | '/practice' | '/leaderboard',
+    to: '/tutorial' | '/daily' | '/practice',
     label: string,
     icon?: ReactNode,
   ) => (
     <Link
       to={to}
       className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm ${
-        route === to ||
-        (to === '/leaderboard' && route.startsWith('/leaderboard'))
-          ? 'bg-neutral-800 text-neutral-100'
-          : 'text-neutral-400 hover:text-neutral-100'
+        route === to ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100'
       }`}
     >
       {icon}
@@ -80,13 +55,12 @@ function Nav() {
   );
 
   /*
-    Four destinations only. Home is the wordmark; preferences sit behind the ⚙.
+    Three destinations only. Home is the wordmark; preferences sit behind the ⚙.
   */
   return (
     <nav aria-label="Main" className="flex flex-wrap items-center justify-end gap-1">
       {item('/daily', 'Daily', style !== 'focus' ? <span className="text-xs">📅</span> : undefined)}
       {item('/practice', 'Practice', style !== 'focus' ? <span className="text-xs">🎯</span> : undefined)}
-      {item('/leaderboard', 'Leaderboard', style !== 'focus' ? <TrophyIcon /> : undefined)}
       {item('/tutorial', 'Learn', style !== 'focus' ? <span className="text-xs">❓</span> : undefined)}
     </nav>
   );
@@ -136,9 +110,6 @@ export function App() {
         {route === '/tutorial' && <Tutorial />}
         {route === '/practice' && <Practice />}
         {route === '/daily' && <Daily />}
-        {(route === '/leaderboard' ||
-          route === '/leaderboard/today' ||
-          route === '/leaderboard/date') && <LeaderboardPage />}
         {route === '/r' && <ReplayPage />}
         {route === '/history' && <HistoryPage />}
       </main>
