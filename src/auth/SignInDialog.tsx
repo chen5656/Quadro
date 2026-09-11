@@ -149,7 +149,7 @@ function EmailForm({
       {signingUp && (
         <Field
           label="Nickname"
-          hint="What the leaderboard shows. Not your real name."
+          hint="Your public display name. Not your real name."
           value={nickname}
           onChange={setNickname}
           autoComplete="nickname"

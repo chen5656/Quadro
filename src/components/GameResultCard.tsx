@@ -222,7 +222,7 @@ export function GameResultCard({
             </span>
             <span className="hidden text-neutral-500 sm:inline">•</span>
             <span className="hidden text-neutral-400 sm:inline">
-              Expert, Master &amp; Extreme count toward today&apos;s leaderboard.
+              Expert, Master &amp; Extreme count toward your Daily history.
             </span>
             {onSwitchToRanked && (
               <button
@@ -242,7 +242,7 @@ export function GameResultCard({
             <span className="font-semibold text-sky-300">Ranked Game</span>
             <span className="hidden text-sky-500/60 sm:inline">•</span>
             <span className="hidden text-neutral-300 sm:inline">
-              Counts toward today&apos;s {opponentName} leaderboard
+              Counts toward your {opponentName} Daily history
             </span>
           </div>
         )}

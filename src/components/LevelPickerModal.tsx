@@ -68,7 +68,7 @@ export function LevelPickerModal({
                           ranked ? 'text-amber-300' : 'text-neutral-500'
                         }`}
                       >
-                        {ranked ? 'Ranked · goes on the board' : 'Not ranked'}
+                        {ranked ? 'Ranked · saved to history' : 'Not ranked'}
                       </span>
                     )}
                   </div>

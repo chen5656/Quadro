@@ -245,7 +245,7 @@ function NicknameForm({
     >
       <Field
         label="Nickname"
-        hint="What the leaderboard shows. Not your real name."
+        hint="Your public display name. Not your real name."
         value={nickname}
         onChange={(value) => {
           setNickname(value);

@@ -41,7 +41,7 @@ export function NicknamePrompt({ onDone }: { onDone: () => void }) {
         }}
       >
         <p className="text-sm text-neutral-400">
-          This is the only name the leaderboard shows. Your real name is never displayed.
+          This is the only name shown with your scores. Your real name is never displayed.
         </p>
 
         <Field

@@ -315,7 +315,7 @@ function PracticeGame({
         levels={PRACTICE_LEVELS}
         selected={setup.level}
         onSelect={(next) => navigate(practiceHrefFor(next, search))}
-        description="Pick the opponent. Practice games are never timed, recorded or posted to the leaderboard."
+        description="Pick the opponent. Practice games are never timed or recorded to history."
       />
     </div>
   );
