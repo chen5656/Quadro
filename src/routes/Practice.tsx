@@ -8,13 +8,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { QuadroGame } from '../engine';
-import { LEVELS, LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai';
 import { Board } from '../components/Board';
 import { LevelPickerModal } from '../components/LevelPickerModal';
+import { Modal } from '../components/Modal';
 import { GameResultCard } from '../components/GameResultCard';
 import { FocusResultPanel } from '../components/FocusResultPanel';
 import { matchBreakdown } from '../game/breakdown';
-import { RobotAvatar } from '../components/RobotAvatar';
 import { useGameStyle } from '../context/GameStyleContext';
 import { useGameSession } from '../game/useGameSession';
 import { PRACTICE_LEVELS, practiceHrefFor, resolvePracticeLevel } from '../practice/levels';
@@ -41,161 +41,89 @@ interface Setup {
   seed: number;
 }
 
-/**
- * The setup a challenge link carries, or null for an ordinary visit.
- *
- * A link that says "beat my score" already names the deal and the opponent —
- * whoever followed it has chosen. Putting the setup form in front of them
- * asks the same question twice and loses the deal if they answer it
- * differently. `play=1` is what distinguishes that link from a shared or
- * bookmarked `?seed=`, which should still open the form with the seed filled
- * in rather than starting a game nobody asked for.
- */
-function setupFromLink(search: string): Setup | null {
+function resolvePracticeSeed(search: string): number {
   const params = new URLSearchParams(
     search || (typeof window !== 'undefined' ? window.location.search : ''),
   );
-  if (params.get('play') !== '1') return null;
-  const seed = params.get('seed');
-  if (seed === null || !isValidSeed(seed)) return null;
-  return { level: resolvePracticeLevel(search), seed: Number(seed) };
+  const seedParam = params.get('seed');
+  if (seedParam !== null && isValidSeed(seedParam)) {
+    return Number(seedParam);
+  }
+  const remembered = storage.practiceSeed();
+  if (remembered !== null && isValidSeed(remembered)) {
+    return Number(remembered);
+  }
+  return randomSeed();
 }
 
 export function Practice() {
-  const { search } = useRouter();
-  const [setup, setSetup] = useState<Setup | null>(() => setupFromLink(search));
+  const { search, navigate } = useRouter();
+  const level = resolvePracticeLevel(search);
+  const [seed, setSeed] = useState<number>(() => resolvePracticeSeed(search));
 
-  // The ⚙ menu switches the opponent by writing `?ai=`; pick it up and restart
-  // the running game at the new difficulty (the key change remounts the board).
+  // Sync state if seed param in URL changes to a valid different seed
   useEffect(() => {
-    if (!setup) return;
-    const urlLevel = resolvePracticeLevel(search);
-    if (urlLevel !== setup.level) {
-      storage.setPracticeLevel(urlLevel);
-      setSetup({ ...setup, level: urlLevel });
+    const params = new URLSearchParams(search);
+    const paramSeed = params.get('seed');
+    if (paramSeed !== null && isValidSeed(paramSeed)) {
+      const parsed = Number(paramSeed);
+      if (parsed !== seed) {
+        setSeed(parsed);
+      }
     }
-  }, [search, setup]);
+  }, [search, seed]);
 
-  return setup ? (
-    // Keyed on seed *and* level so a new deal or a new opponent remounts the
-    // session with a fresh engine.
+  // Ensure the URL always explicitly includes ?level=...&seed=... and no legacy ?ai=
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const currentLevelParam = params.get('level');
+    const currentSeedParam = params.get('seed');
+    const hasAi = params.has('ai');
+    const hasPlay = params.has('play');
+
+    if (
+      currentLevelParam !== level ||
+      currentSeedParam !== String(seed) ||
+      hasAi ||
+      hasPlay
+    ) {
+      params.delete('ai');
+      params.delete('play');
+      params.set('level', level);
+      params.set('seed', String(seed));
+      navigate(`/practice?${params.toString()}`, { replace: true });
+    }
+  }, [search, level, seed, navigate]);
+
+  // Remember the level & seed in storage
+  useEffect(() => {
+    storage.setPracticeLevel(level);
+  }, [level]);
+
+  useEffect(() => {
+    storage.setPracticeSeed(String(seed));
+  }, [seed]);
+
+  const handleNewDeal = useCallback((nextSeed: number) => {
+    setSeed(nextSeed);
+  }, []);
+
+  const setup: Setup = useMemo(() => ({ level, seed }), [level, seed]);
+
+  return (
     <PracticeGame
       key={`${setup.seed}:${setup.level}`}
       setup={setup}
-      onExit={() => setSetup(null)}
-      onNewDeal={(seed) => setSetup({ ...setup, seed })}
+      onNewDeal={handleNewDeal}
     />
-  ) : (
-    <PracticeSetup onStart={setSetup} />
-  );
-}
-
-function PracticeSetup({ onStart }: { onStart: (setup: Setup) => void }) {
-  const { search, navigate } = useRouter();
-  const level = resolvePracticeLevel(search);
-  const setLevel = (next: AgentLevel) => navigate(practiceHrefFor(next, search));
-  const { style } = useGameStyle();
-
-  const seedParam = useMemo(() => {
-    const params = new URLSearchParams(
-      search || (typeof window !== 'undefined' ? window.location.search : ''),
-    );
-    return params.get('seed');
-  }, [search]);
-
-  const [seedText, setSeedText] = useState(seedParam ?? '');
-
-  useEffect(() => {
-    setSeedText(seedParam ?? '');
-  }, [seedParam]);
-
-  const seedValid = seedText.trim() === '' || isValidSeed(seedText);
-
-  const start = () => {
-    if (!seedValid) return;
-    const seed = seedText.trim() === '' ? randomSeed() : Number(seedText.trim());
-    storage.setPracticeLevel(level);
-    storage.setPracticeSeed(String(seed));
-    onStart({ level, seed });
-  };
-
-  return (
-    <div className="mx-auto max-w-lg">
-      <h1 className="text-2xl font-semibold">Practice</h1>
-      <p className="mt-1 text-sm text-neutral-400">
-        Play any opponent, on any deal, as often as you like. Nothing here is timed, recorded or
-        submitted anywhere.
-      </p>
-
-      <fieldset className="mt-6">
-        <legend className="text-sm font-medium text-neutral-300">Opponent</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {LEVELS.map((candidate) => (
-            <button
-              key={candidate}
-              type="button"
-              onClick={() => setLevel(candidate)}
-              aria-pressed={level === candidate}
-              className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition ${
-                level === candidate
-                  ? 'border-sky-400 bg-sky-950/60 ring-1 ring-sky-400/50'
-                  : 'border-neutral-700 hover:bg-neutral-800'
-              }`}
-            >
-              {style !== 'focus' && <RobotAvatar level={candidate} className="h-8 w-8" />}
-              <span className="font-medium">{LEVEL_LABELS[candidate]}</span>
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <details className="mt-5 text-sm" open={Boolean(seedParam && seedParam.trim() !== '')}>
-        <summary className="cursor-pointer select-none text-xs font-medium text-neutral-400 hover:text-neutral-300">
-          Specific deal seed (optional)
-        </summary>
-        <div className="mt-2 rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
-          <label htmlFor="seed" className="block text-xs font-medium text-neutral-300">
-            Seed
-          </label>
-          <input
-            id="seed"
-            inputMode="numeric"
-            value={seedText}
-            onChange={(event) => setSeedText(event.target.value)}
-            placeholder="leave blank for a random deal"
-            aria-invalid={!seedValid}
-            aria-describedby="seed-help"
-            className={`mt-1.5 w-full rounded-md border bg-neutral-900 px-3 py-1.5 text-sm ${
-              seedValid ? 'border-neutral-700' : 'border-red-500'
-            }`}
-          />
-          <p id="seed-help" className="mt-1 text-xs text-neutral-500">
-            {seedValid
-              ? `A whole number from 0 to ${MAX_SEED}. Leave blank for a random deal.`
-              : `Please enter a whole number between 0 and ${MAX_SEED}, or leave blank.`}
-          </p>
-        </div>
-      </details>
-
-      <button
-        type="button"
-        disabled={!seedValid}
-        onClick={start}
-        className="mt-6 w-full rounded-lg bg-sky-600 px-4 py-2 font-medium hover:bg-sky-500 disabled:opacity-50"
-      >
-        Start playing
-      </button>
-    </div>
   );
 }
 
 function PracticeGame({
   setup,
-  onExit,
   onNewDeal,
 }: {
   setup: Setup;
-  onExit: () => void;
   onNewDeal: (seed: number) => void;
 }) {
   const deal = setup.seed;
@@ -206,18 +134,17 @@ function PracticeGame({
   const session = useGameSession({ newGame, ai, timed: false });
   const { style } = useGameStyle();
   const [showSettings, setShowSettings] = useState(false);
+  const [showSeedModal, setShowSeedModal] = useState(false);
   const opponentLabel = LEVEL_LABELS[setup.level];
 
-  /** A fresh deal, which is what "new game" means in Practice. */
-  const newDeal = useCallback(() => {
+  /** A fresh random deal. */
+  const rollRandomDeal = useCallback(() => {
     const next = randomSeed();
-    storage.setPracticeSeed(String(next));
     onNewDeal(next);
   }, [onNewDeal]);
 
   const topRight = (
     <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-      <span className="azul-meta text-xs text-neutral-500 font-mono mr-1">Seed {deal}</span>
       <button
         type="button"
         onClick={session.restart}
@@ -227,17 +154,17 @@ function PracticeGame({
       </button>
       <button
         type="button"
-        onClick={newDeal}
+        onClick={rollRandomDeal}
         className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800 transition"
       >
-        New deal
+        Random deal
       </button>
       <button
         type="button"
-        onClick={onExit}
+        onClick={() => setShowSeedModal(true)}
         className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800 transition"
       >
-        Change setup
+        Deal seed
       </button>
     </div>
   );
@@ -261,7 +188,7 @@ function PracticeGame({
   );
 
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="flex flex-col gap-3 sm:gap-4 w-full">
       {result && style === 'focus' && (
         <FocusResultPanel
           humanWon={session.humanWon}
@@ -271,10 +198,10 @@ function PracticeGame({
           humanScore={result.scores[session.humanSeat]}
           opponentScore={result.scores[1 - session.humanSeat]}
           breakdown={matchBreakdown(session.game.events, session.humanSeat)}
-          onNewGame={newDeal}
+          onNewGame={rollRandomDeal}
           onRestart={session.restart}
-          onBack={onExit}
-          backLabel="Change setup"
+          onBack={() => setShowSeedModal(true)}
+          backLabel="Deal seed"
         />
       )}
 
@@ -288,13 +215,13 @@ function PracticeGame({
           opponentScore={result.scores[1 - session.humanSeat]}
           breakdown={matchBreakdown(session.game.events, session.humanSeat)}
           ranked={false}
-          onPlayAgain={newDeal}
+          onPlayAgain={rollRandomDeal}
           onRestart={session.restart}
-          onBack={onExit}
-          backLabel="Change setup"
+          onBack={() => setShowSeedModal(true)}
+          backLabel="Deal seed"
           share={share}
           onWatchReplay={share ? () => window.open(share.url, '_blank') : undefined}
-          onSwitchToRanked={() => navigate('/daily?ai=expert')}
+          onSwitchToRanked={() => navigate('/daily?level=expert')}
         />
       )}
 
@@ -314,9 +241,118 @@ function PracticeGame({
         onClose={() => setShowSettings(false)}
         levels={PRACTICE_LEVELS}
         selected={setup.level}
-        onSelect={(next) => navigate(practiceHrefFor(next, search))}
+        onSelect={(next) => {
+          setShowSettings(false);
+          navigate(practiceHrefFor(next, search));
+        }}
         description="Pick the opponent. Practice games are never timed or recorded to history."
       />
+
+      <PracticeSeedModal
+        isOpen={showSeedModal}
+        onClose={() => setShowSeedModal(false)}
+        currentSeed={deal}
+        level={setup.level}
+        onApplySeed={(newSeed) => {
+          setShowSeedModal(false);
+          onNewDeal(newSeed);
+        }}
+      />
     </div>
+  );
+}
+
+function PracticeSeedModal({
+  isOpen,
+  onClose,
+  currentSeed,
+  level,
+  onApplySeed,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  currentSeed: number;
+  level: AgentLevel;
+  onApplySeed: (seed: number) => void;
+}) {
+  const [seedText, setSeedText] = useState(String(currentSeed));
+
+  // Reset input value to currentSeed when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSeedText(String(currentSeed));
+    }
+  }, [isOpen, currentSeed]);
+
+  const seedValid = isValidSeed(seedText);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!seedValid) return;
+    onApplySeed(Number(seedText.trim()));
+  };
+
+  const handleRandomize = () => {
+    setSeedText(String(randomSeed()));
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Deal Seed">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center justify-between text-sm rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2">
+          <span className="text-neutral-400">Opponent level:</span>
+          <span className="font-medium text-sky-400">{LEVEL_LABELS[level]}</span>
+        </div>
+
+        <div>
+          <label htmlFor="modal-seed-input" className="block text-xs font-medium text-neutral-300">
+            Seed number (0 – {MAX_SEED})
+          </label>
+          <div className="mt-1.5 flex gap-2">
+            <input
+              id="modal-seed-input"
+              type="text"
+              inputMode="numeric"
+              value={seedText}
+              onChange={(e) => setSeedText(e.target.value)}
+              aria-invalid={!seedValid}
+              aria-describedby="modal-seed-help"
+              className={`w-full rounded-md border bg-neutral-950 px-3 py-2 text-sm font-mono ${
+                seedValid ? 'border-neutral-700' : 'border-red-500'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={handleRandomize}
+              className="shrink-0 rounded-md border border-neutral-700 px-3 py-2 text-xs font-medium hover:bg-neutral-800 transition text-neutral-300"
+            >
+              Randomize
+            </button>
+          </div>
+          <p id="modal-seed-help" className="mt-1.5 text-xs text-neutral-500">
+            {seedValid
+              ? `Current deal seed: ${currentSeed}. Change to replay or test a specific deal.`
+              : `Please enter a valid whole number between 0 and ${MAX_SEED}.`}
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-800 transition text-neutral-300"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!seedValid}
+            className="rounded-lg bg-sky-600 px-4 py-1.5 text-sm font-medium hover:bg-sky-500 transition disabled:opacity-50 text-white"
+          >
+            Play deal
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

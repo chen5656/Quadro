@@ -24,97 +24,117 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function startPractice(level = 'Easy', seed = '4242') {
+async function startPractice(level = 'easy', seed = '4242') {
+  window.history.pushState({}, '', `/practice?level=${level}&seed=${seed}`);
   const user = userEvent.setup();
-  render(<Practice />);
-  await user.click(screen.getByRole('button', { name: level }));
-  await user.clear(screen.getByLabelText('Seed'));
-  await user.type(screen.getByLabelText('Seed'), seed);
-  await user.click(screen.getByRole('button', { name: 'Start playing' }));
+  render(
+    <RouterProvider>
+      <Practice />
+    </RouterProvider>,
+  );
   return user;
 }
 
-describe('practice setup', () => {
-  it('states plainly that nothing is recorded (FR-015)', () => {
-    render(<Practice />);
-    expect(screen.getByText(/Nothing here is timed, recorded or submitted/i)).toBeInTheDocument();
-  });
-
-  it('offers all four levels and no others (FR-010)', () => {
-    render(<Practice />);
-    for (const label of ['Easy', 'Medium', 'Hard', 'Expert', 'Master', 'Extreme']) {
-      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
-    }
-    expect(screen.queryByText(/zero/i)).not.toBeInTheDocument();
-  });
-
-  it('defaults seed to empty when opening without seed parameter', () => {
-    render(<Practice />);
-    expect(screen.getByLabelText('Seed')).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Start playing' })).not.toBeDisabled();
-  });
-
-  it('reads seed from URL search parameters', () => {
-    window.history.pushState({}, '', '/practice?seed=98765');
+describe('practice entry & controls', () => {
+  it('starts the game straight away and shows board controls', () => {
+    window.history.pushState({}, '', '/practice?level=easy&seed=4242');
     render(
       <RouterProvider>
         <Practice />
       </RouterProvider>,
     );
-    expect(screen.getByLabelText('Seed')).toHaveValue('98765');
-    expect(screen.getByRole('button', { name: 'Start playing' })).not.toBeDisabled();
-    window.history.pushState({}, '', '/practice');
+    expect(screen.getByRole('button', { name: 'Restart' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Random deal' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Deal seed' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'You' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Easy' })).toBeInTheDocument();
   });
 
-  it('starts the game straight away for a challenge link', async () => {
-    // The "beat my score" link on a shared replay names the deal and the
-    // opponent. Whoever followed it has already chosen; the setup form would
-    // be asking the same question a second time.
-    window.history.pushState({}, '', '/practice?seed=98765&ai=hard&play=1');
+  it('normalizes URL with level and seed parameters on direct entry', async () => {
+    window.history.pushState({}, '', '/practice');
     render(
       <RouterProvider>
         <Practice />
       </RouterProvider>,
     );
-    await waitFor(() => expect(screen.queryByLabelText('Seed')).not.toBeInTheDocument());
-    expect(screen.getByText(/98765/)).toBeInTheDocument();
-    window.history.pushState({}, '', '/practice');
+    await waitFor(() => {
+      const search = window.location.search;
+      expect(search).toContain('level=');
+      expect(search).toContain('seed=');
+    });
   });
 
-  it('still opens the form for a seed link that did not ask to play', async () => {
-    window.history.pushState({}, '', '/practice?seed=98765');
+  it('supports legacy ai= query parameter and upgrades it to level=', async () => {
+    window.history.pushState({}, '', '/practice?ai=hard&seed=98765');
     render(
       <RouterProvider>
         <Practice />
       </RouterProvider>,
     );
-    expect(screen.getByLabelText('Seed')).toHaveValue('98765');
-    window.history.pushState({}, '', '/practice');
+    expect(screen.getByRole('region', { name: 'Hard' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.search).toContain('level=hard');
+      expect(window.location.search).not.toContain('ai=');
+    });
   });
 
-  it('rejects a seed outside the valid range and blocks the start button', async () => {
+  it('opens the Deal Seed modal and allows entering a custom seed', async () => {
+    window.history.pushState({}, '', '/practice?level=easy&seed=4242');
     const user = userEvent.setup();
-    render(<Practice />);
-    const seedInput = screen.getByLabelText('Seed');
+    render(
+      <RouterProvider>
+        <Practice />
+      </RouterProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Deal seed' }));
+
+    const seedInput = screen.getByLabelText(/Seed number/);
+    expect(seedInput).toHaveValue('4242');
+
+    await user.clear(seedInput);
+    await user.type(seedInput, '8888');
+    await user.click(screen.getByRole('button', { name: 'Play deal' }));
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('seed=8888');
+    });
+  });
+
+  it('generates a new random deal when clicking Random deal', async () => {
+    window.history.pushState({}, '', '/practice?level=easy&seed=4242');
+    const user = userEvent.setup();
+    render(
+      <RouterProvider>
+        <Practice />
+      </RouterProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Random deal' }));
+
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('seed=4242');
+    });
+  });
+
+  it('validates seed range in Deal Seed modal and disables Play deal if invalid', async () => {
+    window.history.pushState({}, '', '/practice?level=easy&seed=4242');
+    const user = userEvent.setup();
+    render(
+      <RouterProvider>
+        <Practice />
+      </RouterProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Deal seed' }));
+
+    const seedInput = screen.getByLabelText(/Seed number/);
     await user.clear(seedInput);
     await user.type(seedInput, '2147483648');
     expect(seedInput).toBeInvalid();
-    expect(screen.getByRole('button', { name: 'Start playing' })).toBeDisabled();
-  });
+    expect(screen.getByRole('button', { name: 'Play deal' })).toBeDisabled();
 
-  it('rejects a non-numeric seed and blocks the start button', async () => {
-    const user = userEvent.setup();
-    render(<Practice />);
-    const seedInput = screen.getByLabelText('Seed');
     await user.clear(seedInput);
     await user.type(seedInput, 'abc');
     expect(seedInput).toBeInvalid();
-    expect(screen.getByRole('button', { name: 'Start playing' })).toBeDisabled();
-  });
-
-  it('shows the seed in play so a deal can be replayed (FR-011)', async () => {
-    await startPractice('Easy', '4242');
-    expect(screen.getByText(/Seed 4242/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Play deal' })).toBeDisabled();
   });
 });
 

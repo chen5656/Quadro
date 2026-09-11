@@ -47,13 +47,17 @@ function normalize(pathname: string): { route: Route; params: RouteParams } {
   return { route: (ROUTES.find((r) => r === trimmed) ?? '/') as Route, params: {} };
 }
 
+interface NavigateOptions {
+  replace?: boolean;
+}
+
 interface RouterValue {
   route: Route;
   params: RouteParams;
   search: string;
   /** Without the leading '#'. Replay codes ride here so they stay out of logs. */
   hash: string;
-  navigate: (to: string) => void;
+  navigate: (to: string, options?: NavigateOptions) => void;
 }
 
 const RouterContext = createContext<RouterValue>({
@@ -100,19 +104,25 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const navigate = useCallback((to: string) => {
+  const navigate = useCallback((to: string, options?: NavigateOptions) => {
     const url = new URL(to, window.location.href);
     if (
       window.location.pathname !== url.pathname ||
       window.location.search !== url.search ||
       window.location.hash !== url.hash
     ) {
-      window.history.pushState({}, '', to);
+      if (options?.replace) {
+        window.history.replaceState({}, '', to);
+      } else {
+        window.history.pushState({}, '', to);
+      }
     }
     setMatch(normalize(url.pathname));
     setSearch(url.search);
     setHash(url.hash.replace(/^#/, ''));
-    window.scrollTo(0, 0);
+    if (!options?.replace) {
+      window.scrollTo(0, 0);
+    }
   }, []);
 
   return (

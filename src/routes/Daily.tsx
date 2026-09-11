@@ -76,8 +76,18 @@ export function Daily() {
     [level, navigate],
   );
 
+  // Ensure the URL always explicitly includes ?level=...
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get('level') !== level || params.has('ai')) {
+      params.delete('ai');
+      params.set('level', level);
+      navigate(`/daily?${params.toString()}`, { replace: true });
+    }
+  }, [search, level, navigate]);
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 sm:gap-4 w-full">
       {stale && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-700 bg-amber-950/40 p-3 text-sm">
           <span>A new Daily is available ({today}).</span>

@@ -62,7 +62,7 @@ export function resolveDailyLevel(search: string): AgentLevel {
 
 export function dailyHrefFor(level: AgentLevel, search = window.location.search): string {
   const params = new URLSearchParams(search);
-  params.delete('level');
-  params.set('ai', level);
+  params.delete('ai');
+  params.set('level', level);
   return `/daily?${params.toString()}`;
 }

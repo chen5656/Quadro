@@ -151,6 +151,9 @@ class Audio {
   private armed = false;
   private lastPlayed = new Map<SfxId, number>();
   private failed = false;
+  /** True while the tab is hidden and the context has been parked. */
+  private parked = false;
+  private watchingVisibility = false;
 
   // ---- settings ------------------------------------------------------
 
@@ -230,6 +233,7 @@ class Audio {
     // A context is born suspended. Arm the first-gesture handler now rather
     // than waiting for something to fail, so the very first tap resumes it.
     this.arm();
+    this.watchVisibility();
     return this.ctx;
   }
 
@@ -268,6 +272,9 @@ class Audio {
    * fire a sound into a suspended context and lose it.
    */
   private async resume(): Promise<boolean> {
+    // Nothing gets to wake the graph back up while the tab is in the
+    // background; `unpark` clears the flag before it asks.
+    if (this.parked) return false;
     const ctx = this.context();
     if (!ctx) return false;
     if (ctx.state === 'suspended') {
@@ -307,6 +314,54 @@ class Audio {
     window.addEventListener('pointerdown', go, { once: true });
     window.addEventListener('keydown', go, { once: true });
     window.addEventListener('touchstart', go, { once: true });
+  }
+
+  /**
+   * Park the whole audio graph while the tab is in the background.
+   *
+   * A running AudioContext is not throttled the way timers and rAF are: it
+   * keeps a real-time audio thread awake, and the loop scheduler keeps waking
+   * the page to hand it the next pass. Worse, a tab that is making noise is
+   * *audible*, and browsers exempt audible tabs from background throttling
+   * altogether — so the bed alone was keeping every animation and interval in
+   * the game running at full rate behind whatever the player switched to.
+   *
+   * `requested` is left alone, so coming back resumes the same bed the route
+   * asked for rather than silence.
+   */
+  private watchVisibility(): void {
+    if (this.watchingVisibility || typeof document === 'undefined') return;
+    this.watchingVisibility = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.park();
+      else this.unpark();
+    });
+  }
+
+  private park(): void {
+    const ctx = this.ctx;
+    if (!ctx || this.parked) return;
+    this.parked = true;
+    // Stop the bed first: suspending freezes `currentTime`, and a loop pass
+    // scheduled against the old clock would land in the past on resume.
+    this.stopMusic({ fade: 0.25 });
+    window.setTimeout(() => {
+      if (!this.parked) return;
+      void ctx.suspend().catch(() => undefined);
+    }, 300);
+  }
+
+  private unpark(): void {
+    if (!this.parked) return;
+    this.parked = false;
+    void (async () => {
+      if (!(await this.resume())) return;
+      const want = this.requested;
+      if (want && this.settings.music) {
+        this.current = null;
+        await this.playMusic(want);
+      }
+    })();
   }
 
   // ---- one-shots -----------------------------------------------------

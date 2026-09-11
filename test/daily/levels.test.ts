@@ -17,8 +17,9 @@ describe('resolveDailyLevel', () => {
     expect(resolveDailyLevel('')).toBe('master');
   });
 
-  it('lets the URL override what the device remembers', () => {
+  it('lets the URL override what the device remembers with level or ai', () => {
     storage.setDailyLevel('master');
+    expect(resolveDailyLevel('?level=hard')).toBe('hard');
     expect(resolveDailyLevel('?ai=hard')).toBe('hard');
   });
 
@@ -28,14 +29,14 @@ describe('resolveDailyLevel', () => {
   });
 
   it('round-trips an explicit choice of the default level', () => {
-    // The whole point of writing `?ai=easy` out: picking Easy must not read
+    // The whole point of writing `?level=easy` out: picking Easy must not read
     // back as "has not chosen" and resurrect the remembered opponent.
     storage.setDailyLevel('master');
     const href = dailyHrefFor(DEFAULT_LEVEL, '');
     expect(resolveDailyLevel(new URL(href, 'https://x').search)).toBe(DEFAULT_LEVEL);
   });
 
-  it('preserves unrelated query parameters', () => {
-    expect(dailyHrefFor('expert', '?debug=1')).toBe('/daily?debug=1&ai=expert');
+  it('preserves unrelated query parameters and produces level=', () => {
+    expect(dailyHrefFor('expert', '?debug=1')).toBe('/daily?debug=1&level=expert');
   });
 });

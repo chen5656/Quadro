@@ -27,14 +27,16 @@ const isLevel = (value: string | null): value is AgentLevel =>
  * device last played; failing that, Easy for a first-time player.
  */
 export function resolvePracticeLevel(search: string): AgentLevel {
-  const ai = new URLSearchParams(search).get('ai');
-  if (isLevel(ai)) return ai;
+  const params = new URLSearchParams(search);
+  const level = params.get('level') ?? params.get('ai');
+  if (isLevel(level)) return level;
   const remembered = storage.practiceLevel();
   return isLevel(remembered) ? remembered : 'easy';
 }
 
 export function practiceHrefFor(level: AgentLevel, search = window.location.search): string {
   const params = new URLSearchParams(search);
-  params.set('ai', level);
+  params.delete('ai');
+  params.set('level', level);
   return `/practice?${params.toString()}`;
 }

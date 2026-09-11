@@ -133,16 +133,16 @@ function ReplayView({ replay, code }: { replay: Replay; code: string }) {
   const challenge = useMemo(() => {
     const today = puzzleIdFor();
     if (replay.puzzleId === today) {
-      return { href: `/daily?ai=${replay.aiLevel}`, note: null as string | null };
+      return { href: `/daily?level=${replay.aiLevel}`, note: null as string | null };
     }
     if (replay.puzzleId) {
       return {
-        href: `/practice?seed=${seedForPuzzle(replay.puzzleId)}&ai=${replay.aiLevel}&play=1`,
+        href: `/practice?seed=${seedForPuzzle(replay.puzzleId)}&level=${replay.aiLevel}&play=1`,
         note: `That deal is from ${replay.puzzleId}, so it opens in Practice — past days are no longer ranked.`,
       };
     }
     return {
-      href: `/practice?seed=${replay.seed}&ai=${replay.aiLevel}&play=1`,
+      href: `/practice?seed=${replay.seed}&level=${replay.aiLevel}&play=1`,
       note: 'Practice games are never ranked, but this is the same deal.',
     };
   }, [replay.puzzleId, replay.aiLevel, replay.seed]);
