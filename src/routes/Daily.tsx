@@ -302,10 +302,8 @@ function DailyAttempt({
 function RecoveredSubmissionNotice({ state }: { state: SubmissionState }) {
   let text: string | null = null;
   if (state.kind === 'submitting') text = 'Saving the score you played before signing in…';
-  else if (state.kind === 'posted')
+  else if (state.kind === 'posted' || state.kind === 'not-improved')
     text = `Your earlier score was recorded to your history.`;
-  else if (state.kind === 'not-improved')
-    text = 'Your earlier score was not higher than your previous best.';
   else if (state.kind === 'failed') text = state.message;
   if (!text) return null;
 

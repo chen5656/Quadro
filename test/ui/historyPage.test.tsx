@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HistoryPage } from '../../src/routes/HistoryPage';
 import { RouterProvider } from '../../src/router';
@@ -76,8 +76,9 @@ describe('HistoryPage Best Score logic', () => {
       next_before: null,
     });
 
+    window.history.pushState({}, '', '/history');
     render(
-      <RouterProvider initialPath="/history">
+      <RouterProvider>
         <HistoryPage />
       </RouterProvider>,
     );

@@ -49,7 +49,7 @@ export async function history(
          FROM scores
         WHERE user_id = ?1
           AND (?2 IS NULL OR puzzle_id < ?2)
-        ORDER BY puzzle_id DESC, ai_level ASC
+        ORDER BY puzzle_id DESC, created_at DESC
         LIMIT ?3`,
     )
     .bind(session.userId, before, limit + 1)

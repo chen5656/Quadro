@@ -141,7 +141,7 @@ describe('POST /api/scores', () => {
     expect(audit?.reason).toBe('INVALID_PAYLOAD');
   });
 
-  it('keeps the attempt with better score margin, in one row (AC-018, AC-019)', async () => {
+  it('saves every attempt in scores and returns improvement against previous best (AC-018, AC-019)', async () => {
     const session = await signUp();
     await post(WIN, session); // 64 - 51 = 13 diff
 
@@ -157,10 +157,17 @@ describe('POST /api/scores', () => {
     const fasterSameDiff = await post({ ...WIN, elapsed_ms: 400_000, final_score: 70, opponent_score: 50 }, session);
     expect(await fasterSameDiff.json()).toMatchObject({ improved: true, best_elapsed_ms: 400_000 });
 
+    // All 4 attempts are saved to scores table
     const rows = await env.DB.prepare(
       'SELECT COUNT(*) AS n, MIN(elapsed_ms) AS best, MAX(final_score) AS score, MAX(attempts) AS attempts FROM scores WHERE user_id = ?',
     ).bind(session.userId).first<{ n: number; best: number; score: number; attempts: number }>();
-    expect(rows).toMatchObject({ n: 1, best: 400_000, score: 70, attempts: 1 });
+    expect(rows).toMatchObject({ n: 4, best: 300_000, score: 70, attempts: 4 });
+
+    // GET /api/me/history returns all 4 games
+    const historyRes = await call(apiRequest('/api/me/history', { session }));
+    expect(historyRes.status).toBe(200);
+    const historyBody = await historyRes.json<{ entries: unknown[] }>();
+    expect(historyBody.entries).toHaveLength(4);
   });
 
   it('tracks attempt counts across multiple attempts including worse games', async () => {
@@ -177,10 +184,15 @@ describe('POST /api/scores', () => {
     const third = await post({ ...WIN, attempts: 3, final_score: 65, opponent_score: 45 }, session);
     expect(await third.json()).toMatchObject({ accepted: true, improved: true, attempts: 3 });
 
-    const row = await env.DB.prepare('SELECT attempts, final_score FROM scores WHERE user_id = ?')
+    const totalRows = await env.DB.prepare('SELECT COUNT(*) AS n FROM scores WHERE user_id = ?')
+      .bind(session.userId)
+      .first<{ n: number }>();
+    expect(totalRows?.n).toBe(3);
+
+    const latestRow = await env.DB.prepare('SELECT attempts, final_score FROM scores WHERE user_id = ? ORDER BY id DESC LIMIT 1')
       .bind(session.userId)
       .first<{ attempts: number; final_score: number }>();
-    expect(row).toMatchObject({ attempts: 3, final_score: 65 });
+    expect(latestRow).toMatchObject({ attempts: 3, final_score: 65 });
   });
 
   it('rate-limits the 61st submission in an hour (AC-024)', async () => {

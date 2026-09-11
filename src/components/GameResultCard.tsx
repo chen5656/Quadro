@@ -508,14 +508,9 @@ export function GameResultCard({
                 Saving your match score…
               </span>
             )}
-            {submissionState?.kind === 'posted' && (
+            {(submissionState?.kind === 'posted' || submissionState?.kind === 'not-improved') && (
               <span className="text-neutral-200">
                 🎉 Match recorded to your <Link to="/history" className="font-semibold text-sky-400 underline hover:text-sky-300">history</Link>!
-              </span>
-            )}
-            {submissionState?.kind === 'not-improved' && (
-              <span className="text-neutral-400">
-                Completed! Previous best score kept in history.
               </span>
             )}
             {submissionState?.kind === 'awaiting-auth' && (
