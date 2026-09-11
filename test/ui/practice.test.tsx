@@ -44,8 +44,8 @@ describe('practice entry & controls', () => {
       </RouterProvider>,
     );
     expect(screen.getByRole('button', { name: 'Restart' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Random deal' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Deal seed' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Game seed' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'You' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Easy' })).toBeInTheDocument();
   });
@@ -88,6 +88,7 @@ describe('practice entry & controls', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Deal seed' }));
 
+    expect(screen.queryByText(/Opponent level:/i)).not.toBeInTheDocument();
     const seedInput = screen.getByLabelText(/Seed number/);
     expect(seedInput).toHaveValue('4242');
 
@@ -100,7 +101,7 @@ describe('practice entry & controls', () => {
     });
   });
 
-  it('generates a new random deal when clicking Random deal', async () => {
+  it('generates a new random deal when clicking New', async () => {
     window.history.pushState({}, '', '/practice?level=easy&seed=4242');
     const user = userEvent.setup();
     render(
@@ -108,7 +109,7 @@ describe('practice entry & controls', () => {
         <Practice />
       </RouterProvider>,
     );
-    await user.click(screen.getByRole('button', { name: 'Random deal' }));
+    await user.click(screen.getByRole('button', { name: 'New' }));
 
     await waitFor(() => {
       expect(window.location.search).not.toContain('seed=4242');

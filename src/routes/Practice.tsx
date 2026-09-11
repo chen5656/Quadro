@@ -106,7 +106,13 @@ export function Practice() {
 
   const handleNewDeal = useCallback((nextSeed: number) => {
     setSeed(nextSeed);
-  }, []);
+    const params = new URLSearchParams(search);
+    params.delete('ai');
+    params.delete('play');
+    params.set('level', level);
+    params.set('seed', String(nextSeed));
+    navigate(`/practice?${params.toString()}`, { replace: true });
+  }, [search, level, navigate]);
 
   const setup: Setup = useMemo(() => ({ level, seed }), [level, seed]);
 
@@ -157,7 +163,7 @@ function PracticeGame({
         onClick={rollRandomDeal}
         className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800 transition"
       >
-        Random deal
+        New
       </button>
       <button
         type="button"
@@ -252,7 +258,6 @@ function PracticeGame({
         isOpen={showSeedModal}
         onClose={() => setShowSeedModal(false)}
         currentSeed={deal}
-        level={setup.level}
         onApplySeed={(newSeed) => {
           setShowSeedModal(false);
           onNewDeal(newSeed);
@@ -266,13 +271,11 @@ function PracticeSeedModal({
   isOpen,
   onClose,
   currentSeed,
-  level,
   onApplySeed,
 }: {
   isOpen: boolean;
   onClose: () => void;
   currentSeed: number;
-  level: AgentLevel;
   onApplySeed: (seed: number) => void;
 }) {
   const [seedText, setSeedText] = useState(String(currentSeed));
@@ -299,11 +302,6 @@ function PracticeSeedModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Deal Seed">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center justify-between text-sm rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2">
-          <span className="text-neutral-400">Opponent level:</span>
-          <span className="font-medium text-sky-400">{LEVEL_LABELS[level]}</span>
-        </div>
-
         <div>
           <label htmlFor="modal-seed-input" className="block text-xs font-medium text-neutral-300">
             Seed number (0 – {MAX_SEED})
