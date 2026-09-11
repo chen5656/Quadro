@@ -417,7 +417,7 @@ export function Board({
   };
 
   return (
-    <div ref={root} className="azul-main-layout relative w-full max-w-full">
+    <div ref={root} className="azul-main-layout relative w-full max-w-full select-none [-webkit-touch-callout:none]">
       {isGameOver && gameResult && (
         <GameOverBurst
           text={outcomeCopy(outcomeOf(gameResult.draw, session.humanWon)).title}

@@ -204,6 +204,9 @@
   width: var(--azul-tile, 1.75rem);
   height: var(--azul-tile, 1.75rem);
   font-size: clamp(0.5rem, calc(var(--azul-tile, 1.75rem) * 0.42), 1.1rem);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /*

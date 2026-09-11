@@ -216,26 +216,26 @@ function PracticeGame({
   }, [onNewDeal]);
 
   const topRight = (
-    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
       <span className="azul-meta text-xs text-neutral-500 font-mono mr-1">Seed {deal}</span>
       <button
         type="button"
         onClick={session.restart}
-        className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800"
+        className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800 transition"
       >
         Restart
       </button>
       <button
         type="button"
         onClick={newDeal}
-        className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800"
+        className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800 transition"
       >
         New deal
       </button>
       <button
         type="button"
         onClick={onExit}
-        className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800"
+        className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs sm:text-sm hover:bg-neutral-800 transition"
       >
         Change setup
       </button>
