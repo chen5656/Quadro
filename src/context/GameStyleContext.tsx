@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from 'react';
@@ -31,7 +30,7 @@ export const GAME_STYLES: readonly StyleOption[] = [
 
 interface GameStyleContextValue {
   style: GameStyle;
-  setStyle: (next: GameStyle) => void;
+  setStyle: (style: GameStyle) => void;
 }
 
 const GameStyleContext = createContext<GameStyleContextValue>({
@@ -39,22 +38,25 @@ const GameStyleContext = createContext<GameStyleContextValue>({
   setStyle: () => {},
 });
 
+function applyGameStyleAttr(style: GameStyle) {
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-game-style', style);
+  }
+}
+
 export function GameStyleProvider({ children }: { children: ReactNode }) {
   const [style, setStyleState] = useState<GameStyle>(() => {
     const saved = storage.gameStyle();
-    if (saved === 'focus') return 'focus';
-    // 'normal' was removed; those players land on the closest remaining style.
-    return 'classic';
+    const initial = saved === 'focus' ? 'focus' : 'classic';
+    applyGameStyleAttr(initial);
+    return initial;
   });
 
   const setStyle = useCallback((next: GameStyle) => {
     setStyleState(next);
     storage.setGameStyle(next);
+    applyGameStyleAttr(next);
   }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-game-style', style);
-  }, [style]);
 
   return (
     <GameStyleContext.Provider value={{ style, setStyle }}>

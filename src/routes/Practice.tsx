@@ -59,19 +59,7 @@ function resolvePracticeSeed(search: string): number {
 export function Practice() {
   const { search, navigate } = useRouter();
   const level = resolvePracticeLevel(search);
-  const [seed, setSeed] = useState<number>(() => resolvePracticeSeed(search));
-
-  // Sync state if seed param in URL changes to a valid different seed
-  useEffect(() => {
-    const params = new URLSearchParams(search);
-    const paramSeed = params.get('seed');
-    if (paramSeed !== null && isValidSeed(paramSeed)) {
-      const parsed = Number(paramSeed);
-      if (parsed !== seed) {
-        setSeed(parsed);
-      }
-    }
-  }, [search, seed]);
+  const seed = useMemo(() => resolvePracticeSeed(search), [search]);
 
   // Ensure the URL always explicitly includes ?level=...&seed=... and no legacy ?ai=
   useEffect(() => {
@@ -95,17 +83,9 @@ export function Practice() {
     }
   }, [search, level, seed, navigate]);
 
-  // Remember the level & seed in storage
-  useEffect(() => {
-    storage.setPracticeLevel(level);
-  }, [level]);
-
-  useEffect(() => {
-    storage.setPracticeSeed(String(seed));
-  }, [seed]);
-
   const handleNewDeal = useCallback((nextSeed: number) => {
-    setSeed(nextSeed);
+    storage.setPracticeLevel(level);
+    storage.setPracticeSeed(String(nextSeed));
     const params = new URLSearchParams(search);
     params.delete('ai');
     params.delete('play');
@@ -254,15 +234,18 @@ function PracticeGame({
         description="Pick the opponent. Practice games are never timed or recorded to history."
       />
 
-      <PracticeSeedModal
-        isOpen={showSeedModal}
-        onClose={() => setShowSeedModal(false)}
-        currentSeed={deal}
-        onApplySeed={(newSeed) => {
-          setShowSeedModal(false);
-          onNewDeal(newSeed);
-        }}
-      />
+      {showSeedModal && (
+        <PracticeSeedModal
+          key={deal}
+          isOpen={showSeedModal}
+          onClose={() => setShowSeedModal(false)}
+          currentSeed={deal}
+          onApplySeed={(newSeed) => {
+            setShowSeedModal(false);
+            onNewDeal(newSeed);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -279,13 +262,6 @@ function PracticeSeedModal({
   onApplySeed: (seed: number) => void;
 }) {
   const [seedText, setSeedText] = useState(String(currentSeed));
-
-  // Reset input value to currentSeed when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setSeedText(String(currentSeed));
-    }
-  }, [isOpen, currentSeed]);
 
   const seedValid = isValidSeed(seedText);
 

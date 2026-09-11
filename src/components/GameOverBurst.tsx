@@ -15,20 +15,19 @@ export function GameOverBurst({ text, tone }: { text: string; tone: 'win' | 'los
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
     [],
   );
-  const [phase, setPhase] = useState<'grow' | 'boom' | 'done'>('grow');
+  const [phase, setPhase] = useState<'grow' | 'boom' | 'done'>(() =>
+    reduced || isFocus ? 'done' : 'grow',
+  );
 
   useEffect(() => {
-    if (reduced || isFocus) {
-      setPhase('done');
-      return;
-    }
+    if (phase === 'done') return;
     const boom = window.setTimeout(() => setPhase('boom'), 1500);
     const done = window.setTimeout(() => setPhase('done'), 3000);
     return () => {
       window.clearTimeout(boom);
       window.clearTimeout(done);
     };
-  }, [reduced, isFocus]);
+  }, [phase]);
 
   const sparks = useMemo(
     () =>

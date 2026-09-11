@@ -144,22 +144,18 @@ export function GameResultCard({
   const theirScore = useCountUp(opponentScore, scoreCounting, skip ? 0 : 900);
 
   const chimed = useRef(false);
+  const ctaChimed = useRef(false);
   useEffect(() => {
-    if (skip || chimed.current) return;
-    if (stage >= BEAT_STATS) {
+    if (skip) return;
+    if (!chimed.current && stage >= BEAT_STATS) {
       chimed.current = true;
       sfx(isWin ? 'bonus' : 'ui', { gain: 0.4 });
     }
-  }, [stage, skip, isWin]);
-
-  const ctaChimed = useRef(false);
-  useEffect(() => {
-    if (skip || ctaChimed.current) return;
-    if (stage >= BEAT_CTA) {
+    if (!ctaChimed.current && stage >= BEAT_CTA) {
       ctaChimed.current = true;
       sfx('ui', { gain: 0.3, rate: 1.15 });
     }
-  }, [stage, skip]);
+  }, [stage, skip, isWin]);
 
   const confetti = useMemo(
     () =>

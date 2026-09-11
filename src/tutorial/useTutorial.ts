@@ -204,11 +204,6 @@ export function useTutorial(): Tutorial {
     bump();
   }, [bump]);
 
-  // A talk step has no click to make, so it is 'after' from the moment it opens.
-  useEffect(() => {
-    if (step.kind === 'talk') setPhase('after');
-  }, [step]);
-
   useEffect(
     () => () => {
       generation.current += 1;
