@@ -22,8 +22,7 @@ CREATE TABLE IF NOT EXISTS scores (
   attempts      INTEGER NOT NULL DEFAULT 1,
   is_bot        INTEGER NOT NULL DEFAULT 0,
   created_at    INTEGER NOT NULL,          -- epoch ms, server-assigned
-  updated_at    INTEGER NOT NULL,
-  UNIQUE (puzzle_id, user_id, ai_level)
+  updated_at    INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_scores_board
@@ -44,6 +43,6 @@ CREATE TABLE IF NOT EXISTS submissions_audit (
 CREATE INDEX IF NOT EXISTS idx_audit_user_time
   ON submissions_audit (user_id, created_at DESC);
 
--- Serves `GET /api/me/history` without walking the board index.
+-- Serves `GET /api/me/history` in chronological order.
 CREATE INDEX IF NOT EXISTS idx_scores_user
-  ON scores (user_id, puzzle_id DESC, ai_level);
+  ON scores (user_id, created_at DESC);

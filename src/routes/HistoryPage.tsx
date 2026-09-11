@@ -8,9 +8,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, LEVELS, type AgentLevel } from '../ai';
 import { ApiError, type HistoryEntry, getHistory } from '../api/client';
 import { RobotAvatar } from '../components/RobotAvatar';
+import { TrophyIcon } from '../components/TrophyIcon';
 import { useIdentity } from '../auth';
 import { useGameStyle } from '../context/GameStyleContext';
 import { decodeReplay } from '../replay/codec';
@@ -20,6 +21,30 @@ import { formatDuration, recapText, replayHref } from '../replay/share';
 import { Link } from '../router';
 
 type Load = 'loading' | 'ready' | 'signed-out' | 'error';
+
+/** Compare two history entries to find which is a better performance */
+function isBetterEntry(a: HistoryEntry, b: HistoryEntry): boolean {
+  const levelOrder: Record<string, number> = {
+    extreme: 6,
+    master: 5,
+    expert: 4,
+    hard: 3,
+    medium: 2,
+    easy: 1,
+  };
+  const orderA = levelOrder[a.ai_level] ?? 0;
+  const orderB = levelOrder[b.ai_level] ?? 0;
+  if (orderA !== orderB) return orderA > orderB;
+
+  // Same level: compare margin
+  if (a.margin !== b.margin) return a.margin > b.margin;
+
+  // Same margin: faster time wins
+  if (a.elapsed_ms !== b.elapsed_ms) return a.elapsed_ms < b.elapsed_ms;
+
+  // Earlier completion wins
+  return a.played_at < b.played_at;
+}
 
 export function HistoryPage() {
   const identity = useIdentity();
@@ -52,12 +77,24 @@ export function HistoryPage() {
     void fetchPage(null, false);
   }, [fetchPage]);
 
+  // Determine the single best entry for each puzzle_id (day)
+  const bestEntryByDay = useMemo(() => {
+    const map = new Map<string, HistoryEntry>();
+    for (const entry of entries) {
+      const existing = map.get(entry.puzzle_id);
+      if (!existing || isBetterEntry(entry, existing)) {
+        map.set(entry.puzzle_id, entry);
+      }
+    }
+    return map;
+  }, [entries]);
+
   if (state === 'signed-out') {
     return (
       <div className="mx-auto max-w-2xl py-10 text-center">
         <h1 className="mb-2 text-xl font-semibold">Your history</h1>
         <p className="mb-4 text-sm text-neutral-400">
-          Sign in to see the Dailies you have posted — and to rewatch them.
+          Sign in to see the Dailies you have played — and to rewatch them.
         </p>
         <button
           type="button"
@@ -74,7 +111,7 @@ export function HistoryPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-semibold">Your history</h1>
       <p className="mb-4 text-sm text-neutral-500">
-        Your best attempt on each day, against each opponent.
+        All your completed Daily attempts. Your highest score each day is awarded the daily trophy.
       </p>
 
       {state === 'loading' && <p className="text-sm text-neutral-400">Loading…</p>}
@@ -108,9 +145,16 @@ export function HistoryPage() {
 
       {entries.length > 0 && (
         <ul className="flex flex-col gap-2">
-          {entries.map((entry) => (
-            <HistoryRow key={`${entry.puzzle_id}:${entry.ai_level}`} entry={entry} />
-          ))}
+          {entries.map((entry, idx) => {
+            const isDailyBest = bestEntryByDay.get(entry.puzzle_id) === entry;
+            return (
+              <HistoryRow
+                key={`${entry.puzzle_id}:${entry.ai_level}:${entry.played_at || idx}`}
+                entry={entry}
+                isDailyBest={isDailyBest}
+              />
+            );
+          })}
         </ul>
       )}
 
@@ -132,7 +176,7 @@ export function HistoryPage() {
   );
 }
 
-function HistoryRow({ entry }: { entry: HistoryEntry }) {
+function HistoryRow({ entry, isDailyBest }: { entry: HistoryEntry; isDailyBest: boolean }) {
   const { style } = useGameStyle();
   const level = entry.ai_level as AgentLevel;
   const label = LEVEL_LABELS[level] ?? entry.ai_level;
@@ -161,17 +205,35 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
   }, [entry.replay, entry.elapsed_ms, entry.rank, label]);
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
+    <li
+      className={`relative flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-colors ${
+        isDailyBest
+          ? 'border-amber-500/40 bg-gradient-to-r from-amber-950/20 via-neutral-900/80 to-neutral-900/60 shadow-[0_0_15px_rgba(245,158,11,0.08)]'
+          : 'border-neutral-800 bg-neutral-900/60'
+      }`}
+    >
       {style !== 'focus' && <RobotAvatar level={level} className="h-8 w-8 shrink-0" />}
 
       <div className="min-w-[7rem] flex-1">
-        <Link
-          to={`/leaderboard/${entry.puzzle_id}?ai=${entry.ai_level}`}
-          className="font-medium tabular-nums hover:underline"
-        >
+        <span className="font-medium tabular-nums text-neutral-100">
           {entry.puzzle_id}
-        </Link>
+        </span>
         <p className="text-xs text-neutral-400">vs {label}</p>
+      </div>
+
+      {/* Middle: 3D trophy for daily best score */}
+      <div className="flex shrink-0 items-center justify-center sm:px-2">
+        {isDailyBest ? (
+          <div
+            className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-300 shadow-sm"
+            title="Your best score on this day"
+          >
+            <TrophyIcon size={20} />
+            <span className="tracking-wide">Best Score</span>
+          </div>
+        ) : (
+          <div className="w-0 sm:w-16" />
+        )}
       </div>
 
       <div className="text-right">
@@ -186,8 +248,7 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
         </p>
         <p className="text-xs tabular-nums text-neutral-500">
           {formatDuration(entry.elapsed_ms)}
-          {entry.attempts && entry.attempts > 1 && ` · ${entry.attempts} attempts`}
-          {entry.rank !== null && ` · #${entry.rank}`}
+          {entry.attempts && entry.attempts > 1 && ` · #${entry.attempts}`}
         </p>
       </div>
 
@@ -202,8 +263,6 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
           {share && <ShareButton url={share.url} text={share.text} />}
         </div>
       ) : (
-        // Rows posted before replays existed have nothing to play back. Saying
-        // so beats a dead button.
         <span
           className="text-xs text-neutral-600"
           title="This game was posted before replays were recorded."
