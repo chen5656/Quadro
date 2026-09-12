@@ -17,6 +17,8 @@ export interface BoardSlots {
   controls: ReactNode;
   /** Back to home — stacked only, where the app chrome is hidden. */
   back: ReactNode;
+  /** Quick sound / mute toggle control. */
+  sound?: ReactNode;
   undo: ReactNode;
   humanProfile: ReactNode;
   opponentProfile: ReactNode;
@@ -80,6 +82,7 @@ export function StackedLayout({
   roundBadge,
   controls,
   back,
+  sound,
   undo,
   youBoard,
   opponentBoard,
@@ -90,6 +93,7 @@ export function StackedLayout({
     <div className="flex w-full flex-col gap-1.5">
       <div className="flex items-center gap-2 px-0.5">
         {back}
+        {sound}
         {roundBadge}
         {controls && <div className="azul-compact-controls ml-auto min-w-0">{controls}</div>}
       </div>

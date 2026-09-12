@@ -14,6 +14,7 @@ import { GameOverBurst } from './GameOverBurst';
 import { StackedLayout, WideLayout, type BoardSlots } from './layouts';
 import { PlayerBoard } from './PlayerBoard';
 import { getBadgeSrc, HumanAvatar, levelChip, RobotAvatar } from './RobotAvatar';
+import { SoundButton } from './SoundButton';
 import { useLayoutMode } from './useLayoutMode';
 
 function UndoIcon() {
@@ -247,6 +248,8 @@ export function Board({
         <span className="sr-only sm:not-sr-only">Back</span>
       </Link>
     ),
+
+    sound: <SoundButton />,
 
     undo: undoEnabled ? (
       <button

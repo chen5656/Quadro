@@ -45,7 +45,7 @@ describe('practice entry & controls', () => {
     );
     expect(screen.getByRole('button', { name: 'Restart' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Game seed' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Deal seed' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'You' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Easy' })).toBeInTheDocument();
   });

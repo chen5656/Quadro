@@ -38,8 +38,6 @@ describe('animator lifetime', () => {
   it('builds one animator for the game and keeps it across renders and a move', async () => {
     const user = userEvent.setup();
     render(<Practice />);
-    await user.click(screen.getByRole('button', { name: 'Easy' }));
-    await user.click(screen.getByRole('button', { name: 'Start playing' }));
 
     await waitFor(() => expect(created).toHaveBeenCalled());
     // React 18 StrictMode-free render: one mount, one animator.

@@ -204,6 +204,7 @@ describe('backstops', () => {
       here by mistake, this move would take six times as long as it may.
     */
     const client = new AiClient({ level: 'extreme', seed: 1 });
+    game.state.round_num = 5;
 
     const move = await client.choose(game.state, game.state.current);
     expect(move.mode).toBe('main-thread');
