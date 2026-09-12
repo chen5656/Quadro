@@ -5,7 +5,7 @@
  * is ranked, so the modal takes those as props rather than being duplicated.
  */
 
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { useGameStyle } from '../context/GameStyleContext';
 import { Modal } from './Modal';
 import { RobotAvatar } from './RobotAvatar';

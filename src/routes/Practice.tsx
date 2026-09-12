@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { QuadroGame } from '../engine';
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { Board } from '../components/Board';
 import { LevelPickerModal } from '../components/LevelPickerModal';
 import { Modal } from '../components/Modal';

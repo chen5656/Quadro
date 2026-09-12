@@ -384,8 +384,9 @@ export function Board({
               aria-hidden="true"
             >
               <img
-                src={getBadgeSrc(opponentLabel)}
+                src={getBadgeSrc(opponentLabel, 'lg')}
                 alt=""
+                decoding="async"
                 className="w-44 sm:w-52 h-auto max-w-none object-contain pr-9 opacity-70 drop-shadow-xl translate-x-2"
               />
             </div>

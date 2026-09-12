@@ -25,3 +25,20 @@
 # waiting worker to announce.
 /sw.js
   Cache-Control: no-cache
+
+# Content-hashed by the build — the filename changes whenever the bytes do, so
+# there is nothing to revalidate.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Badges and story art are fixed artwork: a new one ships under a new name.
+# Without this they fall to the platform default and a returning player
+# revalidates every image on every visit.
+/badges/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable

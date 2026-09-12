@@ -11,13 +11,35 @@
  * Worker.
  */
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
 
-import { AccountDialog } from './AccountDialog';
-import { NicknamePrompt } from './NicknamePrompt';
-import { SignInDialog } from './SignInDialog';
 import { fetchProviders, useSession } from './client';
+
+/*
+  All three are modal: nothing renders them until the player opens one, and
+  most sessions never open any. Static imports put the avatar cropper, the
+  provider list and the nickname rules into the bundle that has to arrive
+  before the first board can be drawn.
+*/
+const AccountDialog = lazy(() =>
+  import('./AccountDialog').then((m) => ({ default: m.AccountDialog })),
+);
+const NicknamePrompt = lazy(() =>
+  import('./NicknamePrompt').then((m) => ({ default: m.NicknamePrompt })),
+);
+const SignInDialog = lazy(() =>
+  import('./SignInDialog').then((m) => ({ default: m.SignInDialog })),
+);
 
 export interface Identity {
   /** True for an anonymous session too: both can post a score. */
@@ -100,13 +122,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <ProvidersContext.Provider value={providers}>
       <IdentityContext.Provider value={identity}>
         {children}
-        {dialog === 'sign-in' && <SignInDialog onClose={close} />}
-        {dialog === 'account' && <AccountDialog onClose={close} />}
-        {dialog === 'none' &&
-          !nicknameAsked &&
-          identity.signedIn &&
-          !identity.isAnonymous &&
-          !identity.hasNickname && <NicknamePrompt onDone={() => setNicknameAsked(true)} />}
+        {/* No fallback: a dialog that is one frame late reads as the dialog
+            opening, where a placeholder panel would read as a glitch. */}
+        <Suspense fallback={null}>
+          {dialog === 'sign-in' && <SignInDialog onClose={close} />}
+          {dialog === 'account' && <AccountDialog onClose={close} />}
+          {dialog === 'none' &&
+            !nicknameAsked &&
+            identity.signedIn &&
+            !identity.isAnonymous &&
+            !identity.hasNickname && <NicknamePrompt onDone={() => setNicknameAsked(true)} />}
+        </Suspense>
       </IdentityContext.Provider>
     </ProvidersContext.Provider>
   );

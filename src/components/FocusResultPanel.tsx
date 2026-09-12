@@ -1,4 +1,4 @@
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { outcomeCopy, outcomeOf, PLAY_AGAIN_LABEL } from '../copy/outcome';
 import type { MatchBreakdown } from '../game/breakdown';
 import { formatElapsed } from './Timer';

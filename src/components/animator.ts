@@ -22,12 +22,36 @@ const FILL_NORMAL = [
   'bg-tile-white text-neutral-900 shadow-sm border-slate-300/40',
 ];
 
+/** A box in the board's own coordinate system. */
+export interface AnimRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Where a tile starts and where it lands, both already measured. */
+export interface Flight {
+  a: AnimRect;
+  b: AnimRect;
+}
+
 export interface Animator {
+  /**
+   * Measure one flight without touching the DOM.
+   *
+   * A move is a dozen tiles leaving at once, and creating each flier appends to
+   * the board. Measuring inside `flyTile` therefore interleaved reads with
+   * writes and forced a synchronous layout per tile, all of it on the frame the
+   * player just tapped. Callers that start a batch measure the whole batch
+   * first and hand the results back in `options.geom`.
+   */
+  measureFlight: (fromId: string, toId: string) => Flight | null;
   flyTile: (
     color: number,
     fromId: string,
     toId: string,
-    options?: { ms?: number; delay?: number; isToken?: boolean },
+    options?: { ms?: number; delay?: number; isToken?: boolean; geom?: Flight | null },
   ) => Promise<void>;
   popScore: (text: string, anchorId: string, good: boolean) => void;
   fadeOut: (elementIds: string[], ms?: number) => Promise<void>;
@@ -80,26 +104,56 @@ export function createAnimator(rootRef: RefObject<HTMLElement | null>, style: Ga
 
   const el = (id: string) => rootRef.current?.querySelector<HTMLElement>(`[data-anim-id="${id}"]`) ?? null;
 
-  const rect = (id: string) => {
-    const root = rootRef.current;
-    const node = el(id);
-    if (!root || !node) return null;
-    const a = node.getBoundingClientRect();
-    const b = root.getBoundingClientRect();
-    if (a.width === 0 && a.height === 0) return null; // In test environments or unrendered state
+  /**
+   * The board's own frame, measured at most once per synchronous burst.
+   *
+   * Every `rect()` needs it, and a move measures a dozen tiles in a row. Read
+   * fresh each time it cost a `getBoundingClientRect` and two forced layout
+   * flushes per tile; nothing can move the board in the middle of one
+   * synchronous run, so one measurement serves the whole burst. The cache is
+   * dropped on the next microtask, which is well before anything can resize.
+   */
+  let rootMetrics: { box: DOMRect; scaleX: number; scaleY: number } | null = null;
+
+  const metrics = (root: HTMLElement) => {
+    if (rootMetrics) return rootMetrics;
+    const box = root.getBoundingClientRect();
     // `getBoundingClientRect()` reports visual pixels after an ancestor's CSS
     // zoom/transform, while absolutely positioned children of `root` use its
     // unscaled local coordinate system. Convert the visual delta back to local
     // pixels so overlays stay attached to their tiles at non-100% display
     // scales.
-    const scaleX = root.offsetWidth > 0 && b.width > 0 ? b.width / root.offsetWidth : 1;
-    const scaleY = root.offsetHeight > 0 && b.height > 0 ? b.height / root.offsetHeight : 1;
+    rootMetrics = {
+      box,
+      scaleX: root.offsetWidth > 0 && box.width > 0 ? box.width / root.offsetWidth : 1,
+      scaleY: root.offsetHeight > 0 && box.height > 0 ? box.height / root.offsetHeight : 1,
+    };
+    queueMicrotask(() => {
+      rootMetrics = null;
+    });
+    return rootMetrics;
+  };
+
+  const rect = (id: string) => {
+    const root = rootRef.current;
+    const node = el(id);
+    if (!root || !node) return null;
+    const a = node.getBoundingClientRect();
+    if (a.width === 0 && a.height === 0) return null; // In test environments or unrendered state
+    const { box: b, scaleX, scaleY } = metrics(root);
     return {
       x: (a.left - b.left) / scaleX,
       y: (a.top - b.top) / scaleY,
       width: a.width / scaleX,
       height: a.height / scaleY,
     };
+  };
+
+  /** A tile's start and end box, measured before anything is written. */
+  const measureFlight = (fromId: string, toId: string): Flight | null => {
+    const a = rect(fromId) ?? rect(fromId.replace(/-\d+$/, ''));
+    const b = rect(toId) ?? rect(toId.replace(/-\d+$/, ''));
+    return a && b ? { a, b } : null;
   };
 
   const centerPoint = (id: string) => {
@@ -261,14 +315,17 @@ export function createAnimator(rootRef: RefObject<HTMLElement | null>, style: Ga
     color: number,
     fromId: string,
     toId: string,
-    options: { ms?: number; delay?: number; isToken?: boolean } = {},
+    options: { ms?: number; delay?: number; isToken?: boolean; geom?: Flight | null } = {},
   ): Promise<void> =>
     new Promise<void>((resolve) => {
       if (!isEnabled()) return resolve();
       const root = rootRef.current;
-      const a = rect(fromId) ?? rect(fromId.replace(/-\d+$/, '')); // fallback to parent if specific slot not found
-      const b = rect(toId) ?? rect(toId.replace(/-\d+$/, ''));
-      if (!root || !a || !b) return resolve();
+      // Pre-measured by the caller when this is one tile of a batch; measured
+      // here — falling back to the parent when the exact slot is gone — when it
+      // is on its own.
+      const geom = 'geom' in options ? options.geom : measureFlight(fromId, toId);
+      if (!root || !geom) return resolve();
+      const { a, b } = geom;
 
       const ms = options.ms ?? FLY_MS;
       const delay = options.delay ?? 0;
@@ -460,6 +517,7 @@ export function createAnimator(rootRef: RefObject<HTMLElement | null>, style: Ga
   };
 
   return {
+    measureFlight,
     flyTile,
     popScore,
     fadeOut,
@@ -471,6 +529,27 @@ export function createAnimator(rootRef: RefObject<HTMLElement | null>, style: Ga
   };
 }
 
+/**
+ * Measure a whole batch of flights, then start them.
+ *
+ * Two passes on purpose: every `getBoundingClientRect` happens before the first
+ * flier is appended, so the browser lays the board out once for the move
+ * instead of once per tile.
+ */
+function start(
+  animator: Animator,
+  plan: { color: number; fromId: string; toId: string; delay: number; isToken?: boolean }[],
+): Promise<void>[] {
+  const measured = plan.map((f) => animator.measureFlight(f.fromId, f.toId));
+  return plan.map((f, i) =>
+    animator.flyTile(f.color, f.fromId, f.toId, {
+      delay: f.delay,
+      isToken: f.isToken,
+      geom: measured[i],
+    }),
+  );
+}
+
 export async function animateDraft(
   animator: Animator,
   beforeState: GameState,
@@ -480,6 +559,17 @@ export async function animateDraft(
   if (!animator.isEnabled()) return;
   const { source, color, dest } = action;
   const board = beforeState.players[player];
+  /**
+   * Every flight of this move, planned before a single one is started.
+   *
+   * The plan is pure bookkeeping — ids and delays — so the whole batch can be
+   * measured in one read pass and then created in one write pass. Starting them
+   * as they were worked out meant measure, append, measure, append: one forced
+   * layout per tile, on the frame the player just tapped, which is exactly
+   * where a hitch is most visible.
+   */
+  const plan: { color: number; fromId: string; toId: string; delay: number; isToken?: boolean }[] =
+    [];
   const flights: Promise<void>[] = [];
   /**
    * The tiles that are leaving fade out under the fliers, so a move reads as
@@ -498,11 +588,13 @@ export async function animateDraft(
       const tokenFloorIdx = board.penalty_tiles.length;
       departing.push('center-token');
       arrivals.push(`floor-${player}-${Math.min(tokenFloorIdx, 6)}`);
-      flights.push(
-        animator.flyTile(-1, 'center-token', `floor-${player}-${Math.min(tokenFloorIdx, 6)}`, {
-          isToken: true,
-        }),
-      );
+      plan.push({
+        color: -1,
+        fromId: 'center-token',
+        toId: `floor-${player}-${Math.min(tokenFloorIdx, 6)}`,
+        delay: 0,
+        isToken: true,
+      });
     }
   } else {
     count = beforeState.displays[source][color];
@@ -514,11 +606,12 @@ export async function animateDraft(
         for (let i = 0; i < leftCount; i += 1) {
           const fromId = `fac-${source}-${c}-${i}`;
           departing.push(fromId);
-          flights.push(
-            animator.flyTile(c, fromId, 'center-pool', {
-              delay: (count + leftoverIdx) * STAGGER_MS,
-            }),
-          );
+          plan.push({
+            color: c,
+            fromId,
+            toId: 'center-pool',
+            delay: (count + leftoverIdx) * STAGGER_MS,
+          });
           leftoverIdx += 1;
         }
       }
@@ -526,9 +619,9 @@ export async function animateDraft(
   }
 
   if (count <= 0) {
-    if (flights.length) {
+    if (plan.length) {
       const releaseLeftovers = animator.conceal(departing);
-      await Promise.all(flights);
+      await Promise.all(start(animator, plan));
       releaseLeftovers();
     }
     return;
@@ -547,7 +640,7 @@ export async function animateDraft(
     const toId = `stage-${player}-${dest}-${slot}`;
     departing.push(fromId);
     arrivals.push(toId);
-    flights.push(animator.flyTile(color, fromId, toId, { delay: i * STAGGER_MS }));
+    plan.push({ color, fromId, toId, delay: i * STAGGER_MS });
   }
 
   for (let j = 0; j < overflow; j += 1) {
@@ -556,8 +649,10 @@ export async function animateDraft(
     floorIdx += 1;
     departing.push(fromId);
     arrivals.push(toId);
-    flights.push(animator.flyTile(color, fromId, toId, { delay: (placed + j) * STAGGER_MS }));
+    plan.push({ color, fromId, toId, delay: (placed + j) * STAGGER_MS });
   }
+
+  flights.push(...start(animator, plan));
 
   const reveal = animator.conceal(departing);
   try {
@@ -610,10 +705,23 @@ export async function animateSettlement(
   events: GameEvent[],
   view: GameState,
   commit: () => void,
+  humanSeat: number = 0,
 ): Promise<void> {
-  const scoredEvents = events.filter((e): e is TileScored => e.kind === 'tile_scored');
-  const penaltyEvents = events.filter((e): e is PenaltyApplied => e.kind === 'penalty');
-  const bonusEvents = events.filter((e): e is import('../engine').BonusAwarded => e.kind === 'bonus');
+  const bySeat = <T extends { player: number }>(a: T, b: T) => {
+    const aIsHuman = a.player === humanSeat ? 1 : 0;
+    const bIsHuman = b.player === humanSeat ? 1 : 0;
+    return aIsHuman - bIsHuman;
+  };
+
+  const scoredEvents = events
+    .filter((e): e is TileScored => e.kind === 'tile_scored')
+    .sort(bySeat);
+  const penaltyEvents = events
+    .filter((e): e is PenaltyApplied => e.kind === 'penalty')
+    .sort(bySeat);
+  const bonusEvents = events
+    .filter((e): e is import('../engine').BonusAwarded => e.kind === 'bonus')
+    .sort(bySeat);
 
   if (scoredEvents.length === 0 && penaltyEvents.length === 0 && bonusEvents.length === 0) return;
 

@@ -89,6 +89,7 @@ describe('Gameplay Animations', () => {
 
     const flySpy = vi.fn().mockResolvedValue(undefined);
     const animator = {
+      measureFlight: vi.fn().mockReturnValue({ a: { x: 0, y: 0, width: 10, height: 10 }, b: { x: 20, y: 20, width: 10, height: 10 } }),
       flyTile: flySpy,
       popScore: vi.fn(),
       fadeOut: vi.fn().mockResolvedValue(undefined),
@@ -132,6 +133,7 @@ describe('Gameplay Animations', () => {
     const streakSpy = vi.fn().mockResolvedValue(undefined);
     const popScoreSpy = vi.fn();
     const animator = {
+      measureFlight: vi.fn().mockReturnValue({ a: { x: 0, y: 0, width: 10, height: 10 }, b: { x: 20, y: 20, width: 10, height: 10 } }),
       flyTile: vi.fn().mockResolvedValue(undefined),
       popScore: popScoreSpy,
       fadeOut: vi.fn().mockResolvedValue(undefined),
@@ -167,26 +169,30 @@ describe('Gameplay Animations', () => {
 
     await animateSettlement(animator, events, view, commit);
 
-    // Order of popScore calls should be +2 (row), +7 (col), +10 (color)
+    // Order of popScore calls:
+    // First, player 1 (bot): +2 (row 4)
+    // Then, player 0 (human): +2 (row 0), +7 (col 1), +10 (color 2)
     expect(popScoreSpy).toHaveBeenNthCalledWith(1, '+2', expect.any(String), true);
-    expect(popScoreSpy).toHaveBeenNthCalledWith(2, '+7', expect.any(String), true);
-    expect(popScoreSpy).toHaveBeenNthCalledWith(3, '+10', expect.any(String), true);
+    expect(popScoreSpy).toHaveBeenNthCalledWith(2, '+2', expect.any(String), true);
+    expect(popScoreSpy).toHaveBeenNthCalledWith(3, '+7', expect.any(String), true);
+    expect(popScoreSpy).toHaveBeenNthCalledWith(4, '+10', expect.any(String), true);
 
     // Both players' scoring grids receive their own bonus streaks.
     expect(streakSpy).toHaveBeenCalledTimes(4);
     expect(streakSpy).toHaveBeenNthCalledWith(
       1,
-      ['wall-0-0-0', 'wall-0-0-1', 'wall-0-0-2', 'wall-0-0-3', 'wall-0-0-4'],
-      expect.any(Object),
-    );
-    expect(streakSpy).toHaveBeenNthCalledWith(
-      4,
       ['wall-1-4-0', 'wall-1-4-1', 'wall-1-4-2', 'wall-1-4-3', 'wall-1-4-4'],
       expect.any(Object),
     );
+    expect(streakSpy).toHaveBeenNthCalledWith(
+      2,
+      ['wall-0-0-0', 'wall-0-0-1', 'wall-0-0-2', 'wall-0-0-3', 'wall-0-0-4'],
+      expect.any(Object),
+    );
 
-    // Check that scores incremented step by step: 40 -> 42 -> 49 -> 59
-    expect(recordedScores).toEqual([42, 49, 59, 59]);
+    // Check that scores incremented step by step (player 1 first, then player 0):
+    // 40 (player 1 bonus committed) -> 42 -> 49 -> 59
+    expect(recordedScores).toEqual([40, 42, 49, 59]);
     expect(view.players[0].score).toBe(59);
     expect(view.players[1].score).toBe(32);
   });

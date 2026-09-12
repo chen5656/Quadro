@@ -25,7 +25,7 @@ import {
   legalActions,
   preview,
 } from '../engine';
-import { GreedyAgent } from '../ai';
+import { GreedyAgent } from '../ai/greedyAgent';
 import type { Session, Selection } from '../game/useGameSession';
 import {
   type MoveStep,

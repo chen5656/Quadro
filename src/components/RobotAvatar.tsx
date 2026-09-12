@@ -1,12 +1,12 @@
-import type { AgentLevel } from '../ai';
+import type { AgentLevel } from '../ai/base';
 
 export const LEVEL_BADGE_URLS: Record<AgentLevel, string> = {
-  extreme: '/badges/1_extreme_red.png',
-  master: '/badges/2_master_purple.png',
-  expert: '/badges/3_expert_blue.png',
-  hard: '/badges/4_hard_orange.png',
-  medium: '/badges/5_medium_green.png',
-  easy: '/badges/6_easy_cyan.png',
+  extreme: '/badges/1_extreme_red.webp',
+  master: '/badges/2_master_purple.webp',
+  expert: '/badges/3_expert_blue.webp',
+  hard: '/badges/4_hard_orange.webp',
+  medium: '/badges/5_medium_green.webp',
+  easy: '/badges/6_easy_cyan.webp',
 };
 
 
@@ -28,9 +28,20 @@ export function levelChip(level?: AgentLevel | string): string {
   return LEVEL_CHIP[norm] ?? 'border-rose-400/50 bg-rose-500/10 text-rose-300 hover:bg-rose-500/25';
 }
 
-export function getBadgeSrc(level?: AgentLevel | string): string {
+/**
+ * Two renditions of every badge, because they are used at two very different
+ * sizes: a ~40px avatar and the ~208px watermark behind the opponent's board.
+ *
+ * One file cannot serve both. Sized for the avatar the watermark is soft on a
+ * retina screen; sized for the watermark every avatar costs six times what it
+ * needs to. The board asks for `'lg'`; everything else takes the default.
+ */
+export type BadgeSize = 'sm' | 'lg';
+
+export function getBadgeSrc(level?: AgentLevel | string, size: BadgeSize = 'sm'): string {
   const normLevel = (level?.toLowerCase() ?? 'extreme') as AgentLevel;
-  return LEVEL_BADGE_URLS[normLevel] ?? LEVEL_BADGE_URLS.extreme;
+  const url = LEVEL_BADGE_URLS[normLevel] ?? LEVEL_BADGE_URLS.extreme;
+  return size === 'lg' ? url.replace(/\.webp$/, '@lg.webp') : url;
 }
 
 /**
@@ -55,6 +66,7 @@ export function RobotAvatar({
         aria-hidden="true"
         className="h-full w-full object-contain drop-shadow-md transition-transform hover:scale-105"
         loading="eager"
+        decoding="async"
       />
     </div>
   );

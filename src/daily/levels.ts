@@ -5,7 +5,7 @@
  * change it — the board's opponent chip and the header's ⚙ menu both do.
  */
 
-import { LEVELS, type AgentLevel } from '../ai';
+import { LEVELS, type AgentLevel } from '../ai/base';
 import { storage } from '../storage';
 
 /** Strongest first: the board's headline opponent leads the row. */

@@ -5,10 +5,18 @@
  * rather than on page load (NFR-002). If the worker cannot be created, or a
  * request fails, the client falls back to searching on the main thread and says
  * so — the game always completes (AC-037), it just gets less responsive.
+ *
+ * The search itself is imported lazily on *both* paths. A static `makeAgent`
+ * put every level — MCTS, the alpha-beta ladder and the evaluator behind them —
+ * into the initial bundle alongside the worker's own copy, which is exactly the
+ * page-load cost NFR-002 exists to avoid. The fallback is a rare path; it can
+ * afford to fetch the chunk the worker would have used.
  */
 
 import { Action, type GameState, legalActions } from '../engine';
-import { type Agent, type AgentBudget, type AgentLevel, makeAgent } from '../ai';
+import type { Agent, AgentLevel } from '../ai/base';
+import { AI_MAIN_THREAD_CAP_MS } from '../ai/budget';
+import type { AgentBudget } from '../ai/registry';
 import type { AiRequest, AiResponse } from '../workers/ai.worker';
 
 export interface AiSpec {
@@ -43,7 +51,30 @@ export interface AiMove {
   steps?: number;
 }
 
+/**
+ * How long to wait for a worker reply before treating the worker as dead.
+ *
+ * Comfortably past `AI_SAFETY_CAP_MS`, which is the longest any search is
+ * allowed to take: the gap is for a badly contended machine, not for thinking.
+ */
+const WORKER_REPLY_TIMEOUT_MS = 45000;
+
 const CALIBRATION_LOG_KEY = 'azul:mcts-calibration:v1';
+const CALIBRATION_FLAG_KEY = 'azul:mcts-calibration:on';
+
+/** Resolved once: the flag is a debugging switch, not something a game reads. */
+let calibrationOn: boolean | null = null;
+
+function calibrationEnabled(): boolean {
+  if (calibrationOn === null) {
+    try {
+      calibrationOn = localStorage.getItem(CALIBRATION_FLAG_KEY) === '1';
+    } catch {
+      calibrationOn = false;
+    }
+  }
+  return calibrationOn;
+}
 
 interface MctsCalibrationEntry {
   recordedAt: string;
@@ -71,6 +102,8 @@ export class AiClient {
   private speculative: { key: string; promise: Promise<AiMove> } | null = null;
   /** The safety-cap warning is worth saying once, not once per move. */
   private warnedCapped = false;
+  private watchingPageHide = false;
+  private onPageHide: (() => void) | null = null;
   /** Flips to 'main-thread' permanently once the worker has let us down. */
   mode: AiMode = 'worker';
 
@@ -85,6 +118,7 @@ export class AiClient {
         type: 'module',
       });
       this.worker.addEventListener('error', () => this.demote());
+      this.watchPageHide();
       return this.worker;
     } catch {
       this.demote();
@@ -100,9 +134,55 @@ export class AiClient {
     this.worker = null;
   }
 
-  private onMainThread(state: GameState, player: number): AiMove {
+  /**
+   * Stop whatever the worker is doing, right now.
+   *
+   * `terminate()` is the only thing that interrupts a search in progress. Every
+   * request still waiting on this worker is rejected as disposed — the caller
+   * that wanted an answer asks again on the fresh worker, and a speculative one
+   * has nobody waiting.
+   */
+  private killWorker(): void {
+    if (!this.worker) return;
+    for (const reject of this.pending.values()) reject(new AiDisposed('AI search cancelled'));
+    this.pending.clear();
+    this.worker.terminate();
+    this.worker = null;
+    // The new worker starts without an agent, so the next request carries `init`.
+    this.initialized = false;
+  }
+
+  /**
+   * Never leave a search burning a core behind a page nobody is looking at.
+   *
+   * A terminated tab still has to tear its workers down, and a worker that is
+   * mid-`extreme` is not at a point where it can be torn down cheaply — which
+   * is what makes closing the window feel slow, and what leaves a whole core
+   * unavailable to everything else on the machine. `pagehide` fires on close,
+   * on navigation and on going into the back/forward cache, and the client
+   * recreates the worker by itself on the next request if the page comes back.
+   */
+  private watchPageHide(): void {
+    if (this.watchingPageHide || typeof window === 'undefined') return;
+    this.watchingPageHide = true;
+    this.onPageHide = () => {
+      this.speculative = null;
+      this.killWorker();
+    };
+    window.addEventListener('pagehide', this.onPageHide);
+  }
+
+  private async onMainThread(state: GameState, player: number): Promise<AiMove> {
     if (!this.fallbackAgent) {
-      this.fallbackAgent = makeAgent(this.spec.level, this.spec.seed, this.spec.budget);
+      const { makeAgent } = await import('../ai/registry');
+      // A shorter stop-loss here than in the worker: this search freezes the
+      // page it is running on, so it must not run for the worker's thirty
+      // seconds. An explicit budget from the caller still wins — the bench and
+      // the tests set their own.
+      this.fallbackAgent = makeAgent(this.spec.level, this.spec.seed, {
+        ...this.spec.budget,
+        safetyCapMs: this.spec.budget?.safetyCapMs ?? AI_MAIN_THREAD_CAP_MS,
+      });
     }
     const started = performance.now();
     const action = this.fallbackAgent.choose(state, player);
@@ -161,8 +241,18 @@ export class AiClient {
         this.recordCalibration(state, prefetched);
         return prefetched;
       }
-      // A different question than the one in flight: let that search finish and
-      // be discarded, and ask the real one behind it.
+      // A different question than the one in flight — an undo, or a restart.
+      //
+      // The search cannot be asked to stop: `agent.choose` is a synchronous
+      // call inside the worker, so the worker never reaches its message queue
+      // until it is done. Letting it run costs a full core for as long as the
+      // level's budget takes (`extreme` spends over a million engine steps in a
+      // late round, enough to reach its own thirty-second stop-loss),
+      // and because the worker answers serially the real question would queue
+      // up *behind* the answer nobody wants. Killing the worker is the only
+      // thing that actually stops it; a fresh one costs a few milliseconds and
+      // re-sends `init` on its first request.
+      this.killWorker();
     }
 
     const worker = this.ensureWorker();
@@ -187,7 +277,24 @@ export class AiClient {
           cleanup();
           reject(new Error('the AI worker failed'));
         };
+        /*
+          The backstop for a worker that goes quiet without failing.
+
+          Every search answers: the agents bound themselves with
+          `AI_SAFETY_CAP_MS` and return their best move so far. So a reply that
+          has not arrived well after that deadline does not mean "still
+          thinking", it means the worker is gone — reclaimed under memory
+          pressure, or a message lost — and those do not always fire `error`.
+          Without this the promise simply never settles: the session sits on
+          `ai-thinking` forever, with undo disabled because the AI is supposedly
+          mid-move, and the only way out is reloading the page.
+        */
+        const timer = setTimeout(() => {
+          cleanup();
+          reject(new Error('the AI worker stopped answering'));
+        }, WORKER_REPLY_TIMEOUT_MS);
         const cleanup = () => {
+          clearTimeout(timer);
           this.pending.delete(id);
           worker.removeEventListener('message', onMessage);
           worker.removeEventListener('error', onError);
@@ -223,24 +330,40 @@ export class AiClient {
   }
 
   /**
-   * Say so, once, if this device is slow enough that the safety cap is biting.
+   * Say so, once, when a search answered with less work than its level calls for.
    *
-   * It should never fire: the levels are sized so that even a device several
-   * times slower than the bench machine finishes their work. If it does fire,
-   * the player is quietly facing a weaker opponent than the level promises, and
-   * that is worth knowing about rather than swallowing.
+   * Every other level is sized so that even a device several times slower than
+   * the bench machine finishes in full, so this firing for one of them means the
+   * player is quietly facing a weaker opponent than the level promises. For
+   * `extreme` in a late round it is expected rather than exceptional — the work
+   * budget there is more than the stop-loss buys on any hardware measured (see
+   * `src/ai/budget.ts`) — and the message names the mode, because the fallback
+   * path caps far shorter than the worker and will trip it far sooner.
    */
   private warnIfCapped(move: AiMove): void {
     if (!move.capped || this.warnedCapped) return;
     this.warnedCapped = true;
     console.warn(
-      `AI search hit its safety cap after ${move.elapsedMs.toFixed(0)}ms; ` +
-        `the ${this.spec.level} opponent is playing below strength on this device.`,
+      `AI search hit its safety cap after ${move.elapsedMs.toFixed(0)}ms ` +
+        `(${move.mode}); the ${this.spec.level} opponent is playing below ` +
+        `strength on this device.`,
     );
   }
 
-  /** Persist one JSON record per manually played Extreme move for calibration. */
+  /**
+   * Persist one JSON record per manually played Extreme move for calibration.
+   *
+   * Off unless someone asks for it. The log is re-parsed, re-serialized and
+   * written back in full on every move, so once it is a few hundred entries
+   * deep it is a growing synchronous main-thread cost — paid in the middle of a
+   * game, by every player, for a measurement only the person tuning the budgets
+   * ever reads — and it is the same cost in dev, where it sat in the way of
+   * every measurement taken to decide whether something else was slow.
+   * `localStorage.setItem('azul:mcts-calibration:on', '1')` turns it on, in any
+   * build, for as long as that key is set.
+   */
   private recordCalibration(state: GameState, move: AiMove): void {
+    if (!calibrationEnabled()) return;
     if (this.spec.level !== 'extreme' || move.simulations === undefined || move.steps === undefined) {
       return;
     }
@@ -273,5 +396,10 @@ export class AiClient {
     this.worker?.terminate();
     this.worker = null;
     this.initialized = false;
+    if (this.onPageHide && typeof window !== 'undefined') {
+      window.removeEventListener('pagehide', this.onPageHide);
+    }
+    this.onPageHide = null;
+    this.watchingPageHide = false;
   }
 }

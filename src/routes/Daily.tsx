@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { useMusic } from '../audio';
 import { useIdentity } from '../auth';
 import { Board } from '../components/Board';

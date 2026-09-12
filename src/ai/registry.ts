@@ -75,13 +75,3 @@ export function makeAgent(
     }
   }
 }
-
-/** Human-facing labels for the level pickers (English only, D-019). */
-export const LEVEL_LABELS: Record<AgentLevel, string> = {
-  easy: 'Easy',
-  medium: 'Medium',
-  hard: 'Hard',
-  expert: 'Expert',
-  master: 'Master',
-  extreme: 'Extreme',
-};

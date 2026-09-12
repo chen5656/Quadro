@@ -24,7 +24,7 @@ import {
   legalActions,
   preview,
 } from '../engine';
-import { randomAgentSeed } from '../ai';
+import { randomAgentSeed } from '../ai/position';
 import { AiClient, AiDisposed, type AiMode, type AiSpec } from './aiClient';
 import type { Spotlight } from '../tutorial/script';
 import config from '../config';
@@ -216,7 +216,7 @@ export function useGameSession(options: SessionOptions): Session {
       displayRef.current = postDraft;
       bump();
       try {
-        await animateSettlement(animator, events, postDraft, bump);
+        await animateSettlement(animator, events, postDraft, bump, humanSeat);
       } finally {
         if (generation.current === myGeneration) {
           displayRef.current = null;

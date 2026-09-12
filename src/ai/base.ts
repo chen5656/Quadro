@@ -36,6 +36,22 @@ export interface Agent {
 export const LEVELS = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'] as const;
 export type AgentLevel = (typeof LEVELS)[number];
 
+/**
+ * Human-facing labels for the level pickers (English only, D-019).
+ *
+ * Here rather than next to `makeAgent`: the pickers, the result card and the
+ * history list all want the label and none of them wants a search algorithm.
+ * Exported from `./registry` it dragged every agent into the initial bundle.
+ */
+export const LEVEL_LABELS: Record<AgentLevel, string> = {
+  easy: 'Easy',
+  medium: 'Medium',
+  hard: 'Hard',
+  expert: 'Expert',
+  master: 'Master',
+  extreme: 'Extreme',
+};
+
 /** `random.Random.choice`: uniform pick from a non-empty sequence. */
 export function choice<T>(rng: Rng, items: T[]): T {
   return items[rng.nextInt(items.length)];

@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { ApiError, type HistoryEntry, getHistory } from '../api/client';
 import { RobotAvatar } from '../components/RobotAvatar';
 import { TrophyIcon } from '../components/TrophyIcon';

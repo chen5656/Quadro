@@ -336,6 +336,34 @@ class Audio {
       if (document.hidden) this.park();
       else this.unpark();
     });
+    /*
+      Hand the audio thread and the decoded beds back when the page goes away.
+
+      A bed is a couple of minutes of audio, and `decodeAudioData` expands that
+      into tens of megabytes of float PCM held by the context — none of which
+      the browser can reclaim while the context is alive. Closing the tab with
+      all of it still live is teardown the browser has to do at the worst
+      possible moment, which is what makes closing the window feel slow.
+      `pagehide` also fires when the page goes into the back/forward cache, so
+      the graph is rebuilt on the way back in exactly as it was on first arrival.
+    */
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', () => this.release());
+    }
+  }
+
+  /** Drop the whole audio graph. The next sound rebuilds it from scratch. */
+  private release(): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    this.stopMusic({ fade: 0 });
+    this.buffers.clear();
+    this.loading.clear();
+    this.ctx = null;
+    this.master = null;
+    this.musicGain = null;
+    this.parked = false;
+    void ctx.close().catch(() => undefined);
   }
 
   private park(): void {

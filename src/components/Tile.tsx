@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import { useGameStyle } from '../context/GameStyleContext';
 import { COLOR_INITIALS, COLOR_NAMES, FIRST_TOKEN } from '../engine';
 
@@ -50,8 +52,13 @@ function SnowflakePattern() {
 /**
  * One tile. The color initial is always drawn on the tile, so the five colors
  * stay distinguishable without color vision (NFR-006, AC-034).
+ *
+ * Memoized: a board is two 5x5 walls, two sets of staging rows, the factories
+ * and the centre — comfortably over a hundred of these — and almost every
+ * render changes a handful of them. The props are all primitives, so the
+ * comparison is cheap and it skips the rest.
  */
-export function Tile({
+export const Tile = memo(function Tile({
   color,
   empty = false,
   size = 'md',
@@ -94,7 +101,7 @@ export function Tile({
       {COLOR_INITIALS[color]}
     </div>
   );
-}
+});
 
 /** The first-player token: a marker, not a tile. */
 export function FirstToken({ size = 'md', animId }: { size?: keyof typeof SIZES; animId?: string }) {

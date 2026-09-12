@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { RobotAvatar } from './RobotAvatar';
 import { share as openShareSheet } from '../share';
 import { SITE_NAME } from '../site';

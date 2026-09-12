@@ -6,7 +6,7 @@
  * — can change it.
  */
 
-import { LEVELS, type AgentLevel } from '../ai';
+import { LEVELS, type AgentLevel } from '../ai/base';
 import { storage } from '../storage';
 
 /** Strongest first, matching the Daily's picker order. */

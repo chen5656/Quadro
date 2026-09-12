@@ -116,7 +116,7 @@ export function useReplaySession(
       displayRef.current = postDraft;
       bump();
       try {
-        await animateSettlement(animator, events, postDraft, bump);
+        await animateSettlement(animator, events, postDraft, bump, replay.humanSeat);
       } finally {
         if (generation.current === myGeneration) {
           displayRef.current = null;

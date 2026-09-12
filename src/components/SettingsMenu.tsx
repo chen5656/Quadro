@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { DAILY_LEVELS, dailyHrefFor, isRankedLevel, resolveDailyLevel } from '../daily/levels';
 import { practiceHrefFor, resolvePracticeLevel } from '../practice/levels';
 import { DisplayScaleControl } from './DisplayScaleControl';

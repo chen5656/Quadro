@@ -12,7 +12,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 
-import { LEVEL_LABELS, type AgentLevel } from '../ai';
+import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { Board } from '../components/Board';
 import { BonusTable } from '../components/BonusTable';
 import { RobotAvatar, levelChip } from '../components/RobotAvatar';

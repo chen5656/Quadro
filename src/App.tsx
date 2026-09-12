@@ -1,20 +1,69 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 
 import { AppBanners } from './components/AppBanners';
 import { SettingsMenu } from './components/SettingsMenu';
 import { useAttemptRunning } from './game/attemptGuard';
 import { AuthControl } from './auth';
-import { Daily } from './routes/Daily';
 import { Home } from './routes/Home';
-import { HistoryPage } from './routes/HistoryPage';
-import { Practice } from './routes/Practice';
-import { ReplayPage } from './routes/ReplayPage';
-import { Tutorial } from './routes/Tutorial';
 import { Link, useRouter } from './router';
 import { ShareSite } from './components/ShareSite';
 import { useLayoutMode } from './components/useLayoutMode';
 import { useGameStyle } from './context/GameStyleContext';
 import { useMusic } from './audio';
+
+/*
+  Home is the only route that has to be in the initial bundle — it is what a
+  first visit lands on. The rest are fetched when they are navigated to, which
+  keeps the tutorial script, the replay decoder, the history list and the result
+  card off the critical path of every page load (NFR-001).
+*/
+const loadDaily = () => import('./routes/Daily');
+const loadHistory = () => import('./routes/HistoryPage');
+const loadPractice = () => import('./routes/Practice');
+const loadReplay = () => import('./routes/ReplayPage');
+const loadTutorial = () => import('./routes/Tutorial');
+
+const Daily = lazy(() => loadDaily().then((m) => ({ default: m.Daily })));
+const HistoryPage = lazy(() => loadHistory().then((m) => ({ default: m.HistoryPage })));
+const Practice = lazy(() => loadPractice().then((m) => ({ default: m.Practice })));
+const ReplayPage = lazy(() => loadReplay().then((m) => ({ default: m.ReplayPage })));
+const Tutorial = lazy(() => loadTutorial().then((m) => ({ default: m.Tutorial })));
+
+/**
+ * Fetch the other routes once the browser has nothing better to do.
+ *
+ * Splitting them keeps them off the critical path; warming them on idle keeps
+ * the split from being something the player can feel. By the time anyone has
+ * read the home page and reached for Daily, the chunk is already in the module
+ * cache and the navigation is as immediate as it was when it was all one file.
+ */
+function useWarmRoutes(): void {
+  useEffect(() => {
+    const warm = () => {
+      void loadDaily();
+      void loadPractice();
+      void loadTutorial();
+      void loadHistory();
+      void loadReplay();
+    };
+    const idle = window.requestIdleCallback;
+    if (typeof idle === 'function') {
+      const handle = idle(warm, { timeout: 4000 });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+    const timer = window.setTimeout(warm, 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
+}
+
+/**
+ * Deliberately blank.
+ *
+ * These chunks are a few tens of kilobytes off a cache or a local network, so
+ * the wait is normally a frame or two; a spinner in that window is a flash of
+ * furniture, not feedback. The layout below already holds the page's shape.
+ */
+const RouteFallback = <div className="min-h-[60vh]" aria-hidden="true" />;
 
 /** Routes that are a game surface: on phones and tablets they own the screen. */
 const GAME_ROUTES = new Set(['/tutorial', '/practice', '/daily']);
@@ -69,6 +118,7 @@ function Nav() {
 export function App() {
   const { route } = useRouter();
   const attemptRunning = useAttemptRunning();
+  useWarmRoutes();
   const { style } = useGameStyle();
   /**
    * On a phone or tablet the nav, style/scale pickers and auth control cost a
@@ -106,12 +156,14 @@ export function App() {
           GAME_ROUTES.has(route) ? 'max-w-[1600px]' : 'max-w-7xl'
         } ${immersive ? 'px-1.5 pb-[env(safe-area-inset-bottom)] pt-1.5' : 'px-2 sm:px-4 py-3'}`}
       >
-        {route === '/' && <Home />}
-        {route === '/tutorial' && <Tutorial />}
-        {route === '/practice' && <Practice />}
-        {route === '/daily' && <Daily />}
-        {route === '/r' && <ReplayPage />}
-        {route === '/history' && <HistoryPage />}
+        <Suspense fallback={RouteFallback}>
+          {route === '/' && <Home />}
+          {route === '/tutorial' && <Tutorial />}
+          {route === '/practice' && <Practice />}
+          {route === '/daily' && <Daily />}
+          {route === '/r' && <ReplayPage />}
+          {route === '/history' && <HistoryPage />}
+        </Suspense>
       </main>
 
       {/*
