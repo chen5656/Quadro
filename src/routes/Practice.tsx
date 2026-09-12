@@ -188,7 +188,9 @@ function PracticeGame({
           onRestart={session.restart}
           onBack={() => setShowSeedModal(true)}
           backLabel="Deal seed"
+          share={share}
         />
+
       )}
 
       {result && style !== 'focus' && (

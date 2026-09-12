@@ -252,7 +252,9 @@ function DailyAttempt({
           onRestart={restart}
           onBack={() => navigate('/')}
           backLabel="Back to Home"
+          share={share}
         />
+
       )}
 
       {session.status === 'game-over' && style !== 'focus' && (

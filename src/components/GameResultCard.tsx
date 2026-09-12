@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { RobotAvatar } from './RobotAvatar';
-import { share as openShareSheet } from '../share';
-import { SITE_NAME } from '../site';
 import { BonusTable } from './BonusTable';
+
 import { formatElapsed } from './Timer';
 import type { SubmissionState } from '../game/useSubmission';
 import { isRankedLevel } from '../daily/levels';
@@ -17,6 +16,8 @@ import {
 import { sfx } from '../audio';
 import { useGameStyle } from '../context/GameStyleContext';
 import { useCountUp, usePrefersReducedMotion, useTimeline } from './resultMotion';
+import { ShareModal } from './ShareModal';
+
 
 /**
  * The screen the player lands on the moment a game ends.
@@ -115,9 +116,9 @@ export function GameResultCard({
   onRetrySubmit,
   onOpenSignIn,
 }: GameResultCardProps) {
-  const [copied, setCopied] = useState(false);
   const { style } = useGameStyle();
   const reduced = usePrefersReducedMotion();
+
   const skip = reduced || style === 'focus';
 
   const opponentName = LEVEL_LABELS[aiLevel] ?? aiLevel;
@@ -172,31 +173,14 @@ export function GameResultCard({
     [],
   );
 
-  const handleShareClick = async () => {
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  const handleShareClick = () => {
     if (!share) return;
-    // Share dismissed, or no native sheet: fall back to the clipboard.
-    if (
-      await openShareSheet({
-        title: `${SITE_NAME} — Daily Challenge`,
-        text: share.text,
-        url: share.url,
-      })
-    ) {
-      return;
-    }
-    // Only claim the link was copied once the write has actually resolved: a
-    // refused clipboard used to leave the button saying "Copied!" over an
-    // empty clipboard.
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(`${share.text}\n${share.url}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {
-        // Nothing to say beyond leaving the button as it was.
-      }
-    }
+    setShareModalOpen(true);
   };
+
+
 
   const shellTint = isWin
     ? 'border-sky-900/60 bg-[#080d14]/95'
@@ -261,8 +245,9 @@ export function GameResultCard({
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
-            <span>{copied ? 'Copied!' : 'Share result'}</span>
+            <span>Share result</span>
           </button>
+
         )}
       </div>
 
@@ -643,9 +628,20 @@ export function GameResultCard({
           )}
         </div>
       </div>
+
+      {share && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          url={share.url}
+          text={share.text}
+          title="Share Daily Challenge Result"
+        />
+      )}
     </div>
   );
 }
+
 
 function PlayerBadge({
   name,

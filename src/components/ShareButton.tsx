@@ -1,15 +1,7 @@
-/**
- * The one share control in the app.
- *
- * Native share sheet where the browser has one, clipboard everywhere else,
- * with the button itself as the confirmation — a toast for something this
- * small is more interruption than information.
- */
-
 import { useState } from 'react';
 
-import { share } from '../share';
-import { SITE_NAME } from '../site';
+import { ShareModal } from './ShareModal';
+
 
 export function ShareButton({
   url,
@@ -25,47 +17,39 @@ export function ShareButton({
   title?: string;
   className?: string;
 }) {
-  const [copied, setCopied] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const onClick = async () => {
-    if (typeof navigator === 'undefined') return;
-    // Dismissed, or no sheet at all: fall through to the clipboard.
-    if (await share({ title: SITE_NAME, text, url })) return;
-    // A clipboard write can be refused outright — an insecure origin, or a
-    // browser that wants a permission this click did not carry. Saying
-    // "Copied!" when nothing was copied is worse than saying nothing, so the
-    // label only changes once the write has actually resolved.
-    if (!navigator.clipboard) {
-      setFailed(true);
-      setTimeout(() => setFailed(false), 3000);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setFailed(true);
-      setTimeout(() => setFailed(false), 3000);
-    }
+  const onClick = () => {
+    setModalOpen(true);
   };
 
+
   return (
-    <button type="button" onClick={() => void onClick()} title={title} className={className}>
-      <svg
-        viewBox="0 0 24 24"
-        className="h-3.5 w-3.5 stroke-current"
-        fill="none"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-      </svg>
-      <span>{copied ? 'Copied!' : failed ? 'Copy failed' : label}</span>
-    </button>
+    <>
+      <button type="button" onClick={() => void onClick()} title={title} className={className}>
+        <svg
+          viewBox="0 0 24 24"
+          className="h-3.5 w-3.5 stroke-current"
+          fill="none"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        <span>{label}</span>
+      </button>
+
+      <ShareModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        url={url}
+        text={text}
+        title={title}
+      />
+    </>
   );
 }
+

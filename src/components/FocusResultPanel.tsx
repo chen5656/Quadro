@@ -2,6 +2,8 @@ import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { outcomeCopy, outcomeOf, PLAY_AGAIN_LABEL } from '../copy/outcome';
 import type { MatchBreakdown } from '../game/breakdown';
 import { formatElapsed } from './Timer';
+import { ShareButton } from './ShareButton';
+
 
 /**
  * What the focus style shows once the game ends.
@@ -24,6 +26,7 @@ export interface FocusResultPanelProps {
   onRestart?: () => void;
   onBack?: () => void;
   backLabel?: string;
+  share?: { url: string; text: string } | null;
 }
 
 export function FocusResultPanel({
@@ -38,6 +41,7 @@ export function FocusResultPanel({
   onRestart,
   onBack,
   backLabel = 'Back to Home',
+  share,
 }: FocusResultPanelProps) {
   const outcome = outcomeOf(draw, humanWon);
   const opponentName = LEVEL_LABELS[aiLevel] ?? aiLevel;
@@ -48,23 +52,38 @@ export function FocusResultPanel({
 
   return (
     <div className="w-full rounded-2xl border border-neutral-800 bg-neutral-950/80 px-4 py-4 sm:px-6 sm:py-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2
-          className={`text-lg font-semibold uppercase tracking-wider sm:text-xl ${
-            isWin ? 'text-sky-300' : isLose ? 'text-rose-300' : 'text-neutral-200'
-          }`}
-        >
-          {outcomeCopy(outcome).title}
-        </h2>
-        <span className="font-mono text-2xl font-black sm:text-3xl">
-          <span className={isWin ? 'text-sky-300' : 'text-neutral-300'}>{humanScore}</span>
-          <span className="px-1.5 text-neutral-600">–</span>
-          <span className={isLose ? 'text-rose-300' : 'text-neutral-400'}>{opponentScore}</span>
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex items-baseline gap-3">
+          <h2
+            className={`text-lg font-semibold uppercase tracking-wider sm:text-xl ${
+              isWin ? 'text-sky-300' : isLose ? 'text-rose-300' : 'text-neutral-200'
+            }`}
+          >
+            {outcomeCopy(outcome).title}
+          </h2>
+          <span className="text-xs text-neutral-500">
+            vs {opponentName} · {formatElapsed(elapsedMs)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-2xl font-black sm:text-3xl">
+            <span className={isWin ? 'text-sky-300' : 'text-neutral-300'}>{humanScore}</span>
+            <span className="px-1.5 text-neutral-600">–</span>
+            <span className={isLose ? 'text-rose-300' : 'text-neutral-400'}>{opponentScore}</span>
+          </span>
+          {share && (
+            <ShareButton
+              url={share.url}
+              text={share.text}
+              label="Share"
+              title="Share result"
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
+            />
+          )}
+        </div>
       </div>
-      <p className="mt-0.5 text-xs text-neutral-500">
-        vs {opponentName} · {formatElapsed(elapsedMs)}
-      </p>
+
 
       {rounds.length > 0 && (
         <div className="mt-4">
