@@ -22,7 +22,7 @@ import {
   settleAndDeal,
 } from '../engine';
 import { type Agent, AgentError, choice, sample } from './base';
-import { AI_SAFETY_CAP_MS, extremeSteps } from './budget';
+import { extremeSteps } from './budget';
 import { now } from './clock';
 import { DEFAULT_WEIGHTS, type Weights, evaluate } from './evaluate';
 import { actionValue } from './greedyAgent';
@@ -32,6 +32,7 @@ import { actionValue } from './greedyAgent';
  * [-1, 1] without saturating on ordinary positions.
  */
 export const VALUE_SCALE = 25.0;
+const SEARCH_EXPIRED = Symbol('search expired');
 
 /** Terminal score margin may refine, but never reverse, one playout's result. */
 export const SCORE_MARGIN_BONUS = 0.1;
@@ -123,6 +124,11 @@ export class MctsAgent implements Agent {
   private readonly maxSimulations: number | null;
   private readonly weights: Weights;
   private rootPlayer = 0;
+  private deadline = Infinity;
+
+  private checkDeadline(): void {
+    if (now() >= this.deadline) throw SEARCH_EXPIRED;
+  }
 
   constructor(options: MctsOptions = {}) {
     this.rng = new Rng(options.seed);
@@ -130,7 +136,7 @@ export class MctsAgent implements Agent {
     this.useClockBudget = options.timeBudget !== undefined;
     this.stepBudget = options.stepBudget ?? null;
     this.stepScale = options.stepScale ?? 1;
-    this.safetyCapMs = options.safetyCapMs ?? AI_SAFETY_CAP_MS;
+    this.safetyCapMs = options.safetyCapMs ?? Infinity;
     this.exploration = options.exploration ?? 1.2;
     this.treeWidth = options.treeWidth ?? 12;
     this.rolloutEpsilon = options.rolloutEpsilon ?? 0.15;
@@ -194,6 +200,7 @@ export class MctsAgent implements Agent {
   /** Greedy-with-noise to the end, or `budget` round boundaries, whichever first. */
   private playout(state: GameState, budget: number): number {
     while (state.phase !== GAME_OVER && budget > 0) {
+      this.checkDeadline();
       if (state.draftingDone()) {
         settleAndDeal(state);
         this.steps += 1;
@@ -237,6 +244,7 @@ export class MctsAgent implements Agent {
     let reward: number;
 
     for (;;) {
+      this.checkDeadline();
       if (state.phase === GAME_OVER) {
         reward = this.reward(state);
         break;
@@ -278,7 +286,7 @@ export class MctsAgent implements Agent {
 
   // ---- agent API ----------------------------------------------------
 
-  choose(state: GameState, player: number): Action {
+  choose(state: GameState, player: number, onProgress?: (steps: number) => void): Action {
     this.simulations = 0;
     this.steps = 0;
     this.cappedOut = false;
@@ -290,6 +298,8 @@ export class MctsAgent implements Agent {
     const root = new Node(player);
     const useClockBudget = this.useClockBudget;
     const deadline = now() + (useClockBudget ? this.timeBudget * 1000 : this.safetyCapMs);
+    this.deadline = deadline;
+    let lastProgress = now();
     const nearEnd = isNearEndgame(state);
     const boost = nearEnd ? 2.5 : 1.0;
     const targetSteps =
@@ -297,15 +307,25 @@ export class MctsAgent implements Agent {
 
     while (useClockBudget ? now() < deadline : this.steps < targetSteps) {
       if (this.maxSimulations !== null && this.simulations >= this.maxSimulations) break;
-      if (!useClockBudget && (this.simulations & 15) === 0 && now() >= deadline) {
+      if (!useClockBudget && now() >= deadline) {
         this.cappedOut = true;
         break;
       }
       const scratch = state.clone();
       // Each simulation deals its own future: an independent determinization.
       scratch.rng = new Rng(this.rng.nextInt(2 ** 31));
-      this.simulate(root, scratch);
+      try {
+        this.simulate(root, scratch);
+      } catch (err) {
+        if (err !== SEARCH_EXPIRED) throw err;
+        this.cappedOut = !useClockBudget;
+        break;
+      }
       this.simulations += 1;
+      if (onProgress && now() - lastProgress >= 1000) {
+        onProgress(this.steps);
+        lastProgress = now();
+      }
     }
 
     // Robust child: most visited, not highest mean — it is far less noisy.

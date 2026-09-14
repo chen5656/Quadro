@@ -192,7 +192,7 @@ function DailyAttempt({
    */
   const share = useMemo(
     () =>
-      session.status === 'game-over'
+      done
         ? shareFor(
             session.game,
             { aiLevel: level, humanSeat: HUMAN_SEAT, puzzleId },
@@ -201,7 +201,7 @@ function DailyAttempt({
         : null,
     // The game object is mutated in place, so the status edge is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [session.status, level, puzzleId],
+    [done, level, puzzleId],
   );
 
   const handleUndo = () => {
@@ -222,7 +222,7 @@ function DailyAttempt({
         ms={session.elapsedMs}
         startedAt={session.startedAt}
         running={session.status !== 'idle' && session.status !== 'game-over'}
-        done={session.status === 'game-over'}
+        done={done}
       />
       <button
         type="button"
@@ -240,7 +240,7 @@ function DailyAttempt({
       {session.status !== 'game-over' && !isRanked(level) && (
         <UnrankedBanner level={level} onSwitchToRanked={() => onSelectLevel(RANKED_LEVEL)} />
       )}
-      {session.status === 'game-over' && style === 'focus' && (
+      {done && style === 'focus' && (
         <FocusResultPanel
           humanWon={session.humanWon}
           draw={session.game.result().draw}
@@ -257,7 +257,7 @@ function DailyAttempt({
 
       )}
 
-      {session.status === 'game-over' && style !== 'focus' && (
+      {done && style !== 'focus' && (
         <GameResultCard
           humanWon={session.humanWon}
           draw={session.game.result().draw}
@@ -280,7 +280,7 @@ function DailyAttempt({
         />
       )}
 
-      {session.status !== 'game-over' && (
+      {!done && (
         <Board
           session={session}
           humanLabel="You"

@@ -29,6 +29,8 @@ export type AiResponse =
   | { id: number; ok: false; error: string };
 
 let agent: Agent | null = null;
+export type AiProgress = { id: number; progress: true; steps: number };
+export type AiWorkerMessage = AiResponse | AiProgress;
 
 self.onmessage = (event: MessageEvent<AiRequest>) => {
   const { id, init, state, player } = event.data;
@@ -38,7 +40,10 @@ self.onmessage = (event: MessageEvent<AiRequest>) => {
       const spec = init ?? { level: 'medium' as AgentLevel };
       agent = makeAgent(spec.level, spec.seed, spec.budget);
     }
-    const action = agent.choose(GameState.fromDict(state), player);
+    const action = agent.choose(GameState.fromDict(state), player, (steps) => {
+      const progress: AiProgress = { id, progress: true, steps };
+      self.postMessage(progress);
+    });
     const reply: AiResponse = {
       id,
       ok: true,

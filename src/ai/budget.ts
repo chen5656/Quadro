@@ -8,20 +8,18 @@
  * weaker opponent instead of a slower one.
  *
  * So strength is defined in units of work instead: a search depth for the
- * alpha-beta levels, a simulation count for `extreme`. Every device plays the
- * same opponent; a slow one only waits longer. The clock survives as
- * `AI_SAFETY_CAP_MS`, the stop-loss that keeps a search from becoming a hang —
- * which `extreme` in a late round does reach on ordinary hardware, so the
- * device-independence above holds for every level except that one.
+ * alpha-beta levels, an engine-work count for `extreme`. Extreme always finishes
+ * that work on its worker; slower devices wait longer. Its client monitors
+ * progress and reports stalled workers instead of returning truncated moves.
+ * Other levels retain `AI_SAFETY_CAP_MS` as their search stop-loss.
  */
 
 /**
- * Hard ceiling on a single search in the worker, in milliseconds.
+ * Hard ceiling for levels other than Extreme, in milliseconds.
  *
  * Most levels finish their work well inside this: the worst single move
  * measured for `master` is a ~2s outlier, with the other levels under 800ms.
- * `extreme` in a late round is the exception and does trip it — see
- * `EXTREME_STEPS_BY_ROUND` below. A search that trips the cap returns its best
+ * Extreme uses a fixed workload instead. A search that trips the cap returns its best
  * answer so far and sets `cappedOut`: degraded, but never a hung tab.
  *
  * Thirty seconds is only tolerable because the search is on a worker, where the
@@ -66,14 +64,11 @@ export const AI_MAIN_THREAD_CAP_MS = 5000;
  *
  * These are not the final numbers. `MctsAgent` multiplies them by 2.5 once the
  * position is near the endgame (`isNearEndgame`), so the real ceiling in round
- * 5 is 1,075,000 steps rather than the 430,000 below. That is more than a
+ * 5 is 1,075,000 steps rather than the 430,000 below. Historically that exceeded a
  * 30-second safety cap buys: measured on an idle M-series Mac, a round-5
  * near-endgame move reached 380k-816k steps across three runs and tripped the
- * cap every time. Two consequences worth knowing before tuning these numbers:
- * `extreme` in a late round is running at a fraction of its nominal strength,
- * and — because the truncation point moves with the machine's load — the same
- * position does not always get the same move, which is the one property the
- * work budget exists to guarantee.
+ * cap every time. Extreme now has no production clock cutoff, so that full
+ * workload is preserved even when a device needs more than thirty seconds.
  *
  * Calibrated from manual games played with the proven 450ms agent on 2026-09-02.
  * That agent actually spent 82k-109k operations in round 1, 96k-118k in round

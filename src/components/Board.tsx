@@ -15,6 +15,7 @@ import { StackedLayout, WideLayout, type BoardSlots } from './layouts';
 import { PlayerBoard } from './PlayerBoard';
 import { getBadgeSrc, HumanAvatar, levelChip, RobotAvatar } from './RobotAvatar';
 import { SoundButton } from './SoundButton';
+import { SlowAiWarning } from './SlowAiWarning';
 import { useLayoutMode } from './useLayoutMode';
 
 function UndoIcon() {
@@ -158,7 +159,7 @@ export function Board({
     return () => node.removeEventListener('keydown', onKeyDown);
   }, [clearSelection, session, triggerUndo]);
 
-  const isGameOver = status === 'game-over';
+  const isGameOver = status === 'game-over' && !session.error;
   const gameResult = isGameOver ? game.result() : null;
 
   const turnUnderline = (active: boolean, tone: 'sky' | 'rose') => (
@@ -430,7 +431,7 @@ export function Board({
       )}
       {/* Screen-reader accessible live status */}
       <div role="status" className="sr-only">
-        {status === 'game-over'
+        {session.error ? 'AI search stopped. Restart or choose another AI.' : status === 'game-over'
           ? (gameResult?.draw ? 'Draw' : session.humanWon ? 'You win' : `${opponentLabel} wins`)
           : isOpponentTurn
             ? `${opponentLabel} is thinking…`
@@ -440,6 +441,12 @@ export function Board({
       </div>
 
       {isStacked ? <StackedLayout {...slots} /> : <WideLayout {...slots} />}
+      {session.error && <p role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-950 p-3 text-sm text-red-100">{session.error}</p>}
+      <SlowAiWarning
+        open={session.slowAiWarning === true}
+        onWait={session.dismissSlowAiWarning ?? (() => undefined)}
+        onChangeLevel={onChangeLevel}
+      />
     </div>
   );
 }

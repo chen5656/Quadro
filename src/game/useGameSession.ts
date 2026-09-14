@@ -95,6 +95,8 @@ export interface Session {
   humanWon: boolean;
   events: GameEvent[];
   aiMode: AiMode;
+  slowAiWarning?: boolean;
+  dismissSlowAiWarning?: () => void;
   /** Set when the AI could not produce a move at all; the attempt is dead. */
   error: string | null;
   /** Attach animator for turn and settlement animations. */
@@ -143,8 +145,13 @@ export function useGameSession(options: SessionOptions): Session {
    * exactly the agent it asked for.
    */
   const attemptSeedRef = useRef(randomAgentSeed());
+  const [slowAiWarning, setSlowAiWarning] = useState(false);
+  const dismissSlowAiWarning = useCallback(() => setSlowAiWarning(false), []);
   const getAi = useCallback(
-    () => (aiRef.current ??= new AiClient({ ...ai, seed: ai.seed ?? attemptSeedRef.current })),
+    () => (aiRef.current ??= new AiClient(
+      { ...ai, seed: ai.seed ?? attemptSeedRef.current },
+      () => setSlowAiWarning(true),
+    )),
     [ai],
   );
 
@@ -305,6 +312,7 @@ export function useGameSession(options: SessionOptions): Session {
     } catch (err) {
       if (err instanceof AiDisposed || generation.current !== myGeneration) return;
       setError((err as Error).message);
+      setSlowAiWarning(false);
       setStatus('game-over');
       return;
     } finally {
@@ -494,6 +502,7 @@ export function useGameSession(options: SessionOptions): Session {
   // ---- restart -------------------------------------------------------
 
   const restart = useCallback(() => {
+    setSlowAiWarning(false);
     generation.current += 1;
     attemptSeedRef.current = randomAgentSeed();
     displayRef.current = null;
@@ -539,6 +548,8 @@ export function useGameSession(options: SessionOptions): Session {
     humanWon: result !== null && !result.draw && result.winner === humanSeat,
     events: game.events,
     aiMode: aiRef.current?.mode ?? 'worker',
+    slowAiWarning,
+    dismissSlowAiWarning,
     error,
     setAnimator,
     hideHints: ai.level === 'extreme',

@@ -67,7 +67,7 @@ export function makeAgent(
         timeBudget: budget.timeBudget,
         maxSimulations: budget.simulations,
         stepScale: budget.stepScale,
-        safetyCapMs: budget.safetyCapMs ?? AI_SAFETY_CAP_MS,
+        safetyCapMs: budget.safetyCapMs ?? Infinity,
       });
     default: {
       const exhaustive: never = level;

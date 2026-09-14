@@ -156,12 +156,12 @@ function PracticeGame({
   );
 
   const { search, navigate } = useRouter();
-  const result = session.status === 'game-over' ? session.game.result() : null;
+  const result = session.status === 'game-over' && !session.error ? session.game.result() : null;
 
   /** The link and recap for the game just finished; null while one is running. */
   const share = useMemo(
     () =>
-      session.status === 'game-over'
+      session.status === 'game-over' && !session.error
         ? shareFor(
             session.game,
             { aiLevel: setup.level, humanSeat: session.humanSeat, puzzleId: null },
