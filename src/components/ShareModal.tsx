@@ -18,6 +18,7 @@ export interface ShareModalProps {
   onClose: () => void;
   url: string;
   text: string;
+  grid?: string;
   title?: string;
 }
 
@@ -26,6 +27,7 @@ export function ShareModal({
   onClose,
   url,
   text,
+  grid,
   title = `Share with friends`,
 }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
@@ -44,10 +46,24 @@ export function ShareModal({
 
   if (!isOpen) return null;
 
+  // Extract grid from text if it was embedded in text so it never duplicates
+  let displayText = text;
+  let displayGrid = grid;
+  if (displayText.includes('🟦') || displayText.includes('🟨') || displayText.includes('🟥') || displayText.includes('🟩') || displayText.includes('⬛') || displayText.includes('⬜')) {
+    const lines = displayText.split('\n');
+    const firstGridIdx = lines.findIndex((l) => /^[🟦🟨🟥🟩⬛⬜]+$/.test(l.trim()));
+    if (firstGridIdx !== -1) {
+      displayGrid ??= lines.slice(firstGridIdx).join('\n');
+      displayText = lines.slice(0, firstGridIdx).join('\n').trimEnd();
+    }
+  }
+
+  const fullShareText = [displayText, url, displayGrid].filter(Boolean).join('\n\n');
+
   const handleCopy = async () => {
     if (!navigator.clipboard) return;
     try {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
+      await navigator.clipboard.writeText(fullShareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -89,7 +105,7 @@ export function ShareModal({
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4">
             <TwitterShareButton
               url={url}
-              title={text}
+              title={displayText}
               className="flex flex-col items-center gap-1.5 transition-transform hover:scale-105 active:scale-95"
             >
               <XIcon size={44} round />
@@ -105,7 +121,7 @@ export function ShareModal({
 
             <RedditShareButton
               url={url}
-              title={text}
+              title={displayText}
               className="flex flex-col items-center gap-1.5 transition-transform hover:scale-105 active:scale-95"
             >
               <RedditIcon size={44} round />
@@ -114,7 +130,7 @@ export function ShareModal({
 
             <WhatsappShareButton
               url={url}
-              title={text}
+              title={displayText}
               separator=" "
               className="flex flex-col items-center gap-1.5 transition-transform hover:scale-105 active:scale-95"
             >
@@ -124,7 +140,7 @@ export function ShareModal({
 
             <TelegramShareButton
               url={url}
-              title={text}
+              title={displayText}
               className="flex flex-col items-center gap-1.5 transition-transform hover:scale-105 active:scale-95"
             >
               <TelegramIcon size={44} round />
@@ -152,9 +168,19 @@ export function ShareModal({
           </div>
 
           <div className="max-h-48 overflow-y-auto rounded-xl border border-neutral-800 bg-neutral-950/70 p-3 font-mono text-xs text-neutral-300 whitespace-pre-wrap select-all leading-relaxed">
-            {text}
-            {'\n'}
-            <span className="text-sky-400 break-all">{url}</span>
+            {displayText}
+            {url && (
+              <>
+                {'\n\n'}
+                <span className="text-sky-400 break-all">{url}</span>
+              </>
+            )}
+            {displayGrid && (
+              <>
+                {'\n\n'}
+                <span>{displayGrid}</span>
+              </>
+            )}
           </div>
         </div>
       </div>

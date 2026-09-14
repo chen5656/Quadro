@@ -50,7 +50,10 @@ export function replayHref(code: string): string {
   return `${REPLAY_PATH}/${code}`;
 }
 
-export function replayUrl(replay: Replay, origin = window.location.origin): string {
+export function replayUrl(
+  replay: Replay,
+  origin = typeof window === 'undefined' ? 'https://acgame.win' : window.location.origin,
+): string {
   return `${origin}${replayHref(encodeReplay(replay))}`;
 }
 
@@ -89,6 +92,7 @@ export function recapText(
     totalEntries?: number | null;
     rounds?: number | null;
     wallGrid?: boolean[][] | null;
+    url?: string | null;
   },
 ): string {
   const mine = replay.scores[replay.humanSeat];
@@ -115,29 +119,14 @@ export function recapText(
     statsMeta.push(`#${options.rank}${options.totalEntries ? `/${options.totalEntries}` : ''}`);
   }
 
-  // If wallGrid is not passed directly, derive it by running the replay if actions exist.
-  let wallEmoji = '';
-  const grid =
-    options.wallGrid ??
-    (replay.actions.length > 0
-      ? (() => {
-          try {
-            const finished = runReplay(replay);
-            return finished.state.players[replay.humanSeat].grid;
-          } catch {
-            return null;
-          }
-        })()
-      : null);
-
-  if (grid) {
-    wallEmoji = wallGridEmoji(grid);
-  }
+  // Only include wallEmoji if wallGrid is explicitly requested in options.
+  const wallEmoji = options.wallGrid ? wallGridEmoji(options.wallGrid) : '';
 
   const lines = [
     `${SITE_NAME} ${modeBadge}`,
     `${outcomeBadge} · ${mine}–${theirs} (${margin >= 0 ? '+' : ''}${margin})`,
     ...(statsMeta.length > 0 ? [statsMeta.join(' · ')] : []),
+    ...(options.url ? ['', options.url] : []),
     ...(wallEmoji ? ['', wallEmoji] : []),
   ];
 
@@ -150,9 +139,20 @@ export function formatDuration(ms: number): string {
   return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 }
 
+export function replayWallGridEmoji(replay: Replay): string | null {
+  if (replay.actions.length === 0) return null;
+  try {
+    const finished = runReplay(replay);
+    const grid = finished.state.players[replay.humanSeat].grid;
+    return wallGridEmoji(grid);
+  } catch {
+    return null;
+  }
+}
+
 /**
- * The whole share payload for a finished game: the link that replays it and
- * the recap line that goes beside the link.
+ * The whole share payload for a finished game: the link that replays it,
+ * the recap line that goes beside the link, and the color grid.
  */
 export function shareFor(
   game: QuadroGame,
@@ -163,19 +163,21 @@ export function shareFor(
     rank?: number | null;
     totalEntries?: number | null;
   },
-): { url: string; text: string } | null {
+): { url: string; text: string; grid?: string } | null {
   try {
     const replay = replayOf(game, options);
     const humanGrid = game.state.players[options.humanSeat].grid;
     const rounds = game.state.round_num;
+    const url = replayUrl(replay);
+    const grid = wallGridEmoji(humanGrid);
 
     return {
-      url: replayUrl(replay),
+      url,
       text: recapText(replay, {
         ...recap,
         rounds,
-        wallGrid: humanGrid,
       }),
+      grid,
     };
   } catch {
     return null;

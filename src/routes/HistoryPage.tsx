@@ -17,7 +17,7 @@ import { useGameStyle } from '../context/GameStyleContext';
 import { decodeReplay } from '../replay/codec';
 import { ENGINE_VERSION } from '../replay/version';
 import { ShareButton } from '../components/ShareButton';
-import { formatDuration, recapText, replayHref } from '../replay/share';
+import { formatDuration, recapText, replayHref, replayWallGridEmoji } from '../replay/share';
 import { Link } from '../router';
 
 type Load = 'loading' | 'ready' | 'signed-out' | 'error';
@@ -191,6 +191,7 @@ function HistoryRow({ entry, isDailyBest }: { entry: HistoryEntry; isDailyBest: 
     if (!entry.replay) return null;
     try {
       const replay = decodeReplay(entry.replay, ENGINE_VERSION);
+      const grid = replayWallGridEmoji(replay) ?? undefined;
       return {
         url: `${window.location.origin}${replayHref(entry.replay)}`,
         text: recapText(replay, {
@@ -198,6 +199,7 @@ function HistoryRow({ entry, isDailyBest }: { entry: HistoryEntry; isDailyBest: 
           elapsedMs: entry.elapsed_ms,
           rank: entry.rank,
         }),
+        grid,
       };
     } catch {
       return null;
@@ -260,7 +262,7 @@ function HistoryRow({ entry, isDailyBest }: { entry: HistoryEntry; isDailyBest: 
           >
             Watch
           </Link>
-          {share && <ShareButton url={share.url} text={share.text} />}
+          {share && <ShareButton url={share.url} text={share.text} grid={share.grid} />}
         </div>
       ) : (
         <span

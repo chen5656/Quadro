@@ -23,7 +23,7 @@ import { ReplayDecodeError, decodeReplay, type Replay } from '../replay/codec';
 import { runReplay } from '../replay/rebuild';
 import { ShareButton } from '../components/ShareButton';
 import { puzzleIdFor, seedForPuzzle } from '../daily/puzzle';
-import { formatDuration, recapText, replayHref } from '../replay/share';
+import { formatDuration, recapText, replayHref, replayWallGridEmoji } from '../replay/share';
 import { ENGINE_VERSION } from '../replay/version';
 import { Link, useRouter } from '../router';
 
@@ -154,6 +154,7 @@ function ReplayView({ replay, code }: { replay: Replay; code: string }) {
     <ShareButton
       url={`${window.location.origin}${replayHref(code)}`}
       text={recapText(replay, { levelLabel: opponentLabel })}
+      grid={replayWallGridEmoji(replay) ?? undefined}
       label="Share"
       title="Share this replay"
     />

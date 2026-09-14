@@ -57,7 +57,7 @@ export interface GameResultCardProps {
    * be encoded (absurdly long), and the share control is hidden rather than
    * offering a link to nothing.
    */
-  share?: { url: string; text: string } | null;
+  share?: { url: string; text: string; grid?: string } | null;
   /** Fresh game — a new deal in Practice. Omitted in Daily where only Restart applies. */
   onPlayAgain?: () => void;
   /** Replay the same deal. Omitted hides the Restart control. */
@@ -635,6 +635,7 @@ export function GameResultCard({
           onClose={() => setShareModalOpen(false)}
           url={share.url}
           text={share.text}
+          grid={share.grid}
           title="Share Daily Challenge Result"
         />
       )}

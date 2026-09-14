@@ -26,7 +26,7 @@ export interface FocusResultPanelProps {
   onRestart?: () => void;
   onBack?: () => void;
   backLabel?: string;
-  share?: { url: string; text: string } | null;
+  share?: { url: string; text: string; grid?: string } | null;
 }
 
 export function FocusResultPanel({
@@ -76,6 +76,7 @@ export function FocusResultPanel({
             <ShareButton
               url={share.url}
               text={share.text}
+              grid={share.grid}
               label="Share"
               title="Share result"
               className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-800 hover:text-white"

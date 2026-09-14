@@ -6,6 +6,7 @@ import { ShareModal } from './ShareModal';
 export function ShareButton({
   url,
   text,
+  grid,
   label = 'Share',
   title = 'Share this game',
   className = 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-800 hover:text-white',
@@ -13,6 +14,7 @@ export function ShareButton({
   url: string;
   /** The recap line pasted next to the link. */
   text: string;
+  grid?: string;
   label?: string;
   title?: string;
   className?: string;
@@ -47,6 +49,7 @@ export function ShareButton({
         onClose={() => setModalOpen(false)}
         url={url}
         text={text}
+        grid={grid}
         title={title}
       />
     </>
