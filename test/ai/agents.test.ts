@@ -4,7 +4,7 @@
  * strength ordering is asserted statistically by `test/strength.bench.ts`.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   Action,
@@ -252,6 +252,44 @@ describe('registry', () => {
     expect(agent.steps).toBeGreaterThanOrEqual(EXTREME_STEPS_BY_ROUND[0]);
     expect(agent.simulations).toBeGreaterThan(0);
     expect(agent.cappedOut).toBe(false);
+  });
+
+  it('interrupts an expensive Extreme simulation at its deadline and preserves the live board', () => {
+    const game = new QuadroGame(1);
+    const before = game.state.toDict(true);
+    const agent = new MctsAgent({ seed: 1, safetyCapMs: 30 });
+    let clock = 0;
+    const spy = vi.spyOn(performance, 'now').mockImplementation(() => (clock += 5));
+    try {
+      const action = agent.choose(game.state, game.state.current);
+      expect(isLegal(game.state, action)).toBe(true);
+      expect(agent.cappedOut).toBe(true);
+      expect(agent.simulations).toBe(0);
+      expect(game.state.toDict(true)).toEqual(before);
+      expect(clock).toBeLessThanOrEqual(50);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('completes identical Extreme work and chooses the same move despite a very slow clock', () => {
+    const game = new QuadroGame(31);
+    const fast = makeAgent('extreme', 5, { simulations: 40 }) as MctsAgent;
+    const expected = fast.choose(game.state, game.state.current);
+    const slow = makeAgent('extreme', 5, { simulations: 40 }) as MctsAgent;
+    let clock = 0;
+    const spy = vi.spyOn(performance, 'now').mockImplementation(() => (clock += 10_000));
+    const progress = vi.fn();
+    try {
+      expect(slow.choose(game.state, game.state.current, progress).actionId).toBe(expected.actionId);
+      expect(slow.steps).toBe(fast.steps);
+      expect(slow.simulations).toBe(40);
+      expect(slow.cappedOut).toBe(false);
+      expect(clock).toBeGreaterThan(45_000);
+      expect(progress).toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('spends more on the endgame, where the search actually converges', () => {

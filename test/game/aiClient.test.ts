@@ -16,9 +16,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { QuadroGame, applyAction, legalActions } from '../../src/engine';
-import { AI_MAIN_THREAD_CAP_MS } from '../../src/ai/budget';
 import { AiClient } from '../../src/game/aiClient';
-import type { AiRequest, AiResponse } from '../../src/workers/ai.worker';
+import type { AiRequest, AiResponse, AiWorkerMessage } from '../../src/workers/ai.worker';
 
 /** A worker that records what it was asked and answers on a later task. */
 class FakeWorker implements Pick<Worker, 'postMessage' | 'terminate'> {
@@ -29,7 +28,11 @@ class FakeWorker implements Pick<Worker, 'postMessage' | 'terminate'> {
   static all: FakeWorker[] = [];
   readonly requests: AiRequest[] = [];
   terminated = false;
-  private readonly listeners = new Set<(event: MessageEvent<AiResponse>) => void>();
+  private readonly listeners = new Set<(event: MessageEvent<AiWorkerMessage>) => void>();
+
+  emit(data: AiWorkerMessage): void {
+    for (const listener of this.listeners) listener({ data } as MessageEvent<AiWorkerMessage>);
+  }
 
   constructor() {
     FakeWorker.last = this;
@@ -37,12 +40,12 @@ class FakeWorker implements Pick<Worker, 'postMessage' | 'terminate'> {
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    if (type === 'message') this.listeners.add(listener as (e: MessageEvent<AiResponse>) => void);
+    if (type === 'message') this.listeners.add(listener as (e: MessageEvent<AiWorkerMessage>) => void);
   }
 
   removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
     if (type === 'message') {
-      this.listeners.delete(listener as (e: MessageEvent<AiResponse>) => void);
+      this.listeners.delete(listener as (e: MessageEvent<AiWorkerMessage>) => void);
     }
   }
 
@@ -79,6 +82,7 @@ function install(): void {
 }
 
 afterEach(() => {
+  localStorage.removeItem('azul:extreme-slow-warning:v1');
   vi.unstubAllGlobals();
   vi.useRealTimers();
   FakeWorker.last = null;
@@ -168,6 +172,46 @@ describe('prefetch', () => {
 });
 
 describe('backstops', () => {
+  it('warns once at 10s, including prefetch, then rejects a silent Extreme worker without a move', async () => {
+    install();
+    vi.useFakeTimers();
+    FakeWorker.mute = true;
+    const game = new QuadroGame(31);
+    const onSlow = vi.fn();
+    const spec = { level: 'extreme' as const, seed: 1, budget: { safetyCapMs: 0 } };
+    const client = new AiClient(spec, onSlow);
+    client.prefetch(game.state, game.state.current);
+    const pending = client.choose(game.state, game.state.current);
+    const rejected = expect(pending).rejects.toThrow('No weaker move was played');
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(onSlow).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(onSlow).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(35_000);
+    await rejected;
+    expect(FakeWorker.last!.terminated).toBe(true);
+    client.dispose();
+
+    const nextClient = new AiClient(spec, onSlow);
+    nextClient.prefetch(game.state, game.state.current);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(onSlow).toHaveBeenCalledTimes(1);
+    nextClient.dispose();
+  });
+
+  it('clears the slow warning timer when a pending search is disposed', async () => {
+    install();
+    vi.useFakeTimers();
+    FakeWorker.mute = true;
+    const game = new QuadroGame(31);
+    const onSlow = vi.fn();
+    const client = new AiClient({ level: 'extreme' }, onSlow);
+    client.prefetch(game.state, game.state.current);
+    client.dispose();
+    await vi.advanceTimersByTimeAsync(46_000);
+    expect(onSlow).not.toHaveBeenCalled();
+  });
+
   it('gives up on a worker that stops answering, and finishes the move anyway', async () => {
     install();
     vi.useFakeTimers();
@@ -191,26 +235,52 @@ describe('backstops', () => {
     client.dispose();
   });
 
-  it('caps a main-thread search far shorter than a worker one', async () => {
-    // No `Worker` at all: every search is on the UI thread, where a long one is
-    // a frozen page rather than a busy background thread.
+  it('refuses a weaker main-thread fallback when Extreme has no worker', async () => {
     vi.stubGlobal('Worker', undefined);
     const game = new QuadroGame(31);
-    /*
-      `extreme` on purpose, and a real search rather than a stub: its work
-      budget is more than any stop-loss buys (see `src/ai/budget.ts`), so it
-      runs until it is stopped. That makes it the one level that actually
-      measures which cap is in force — with the worker's thirty seconds wired
-      here by mistake, this move would take six times as long as it may.
-    */
     const client = new AiClient({ level: 'extreme', seed: 1 });
     game.state.round_num = 5;
 
-    const move = await client.choose(game.state, game.state.current);
-    expect(move.mode).toBe('main-thread');
-    expect(move.capped).toBe(true);
-    // The cap is checked between simulations, so it overruns it slightly.
-    expect(move.elapsedMs).toBeLessThan(AI_MAIN_THREAD_CAP_MS * 1.5);
+    await expect(client.choose(game.state, game.state.current)).rejects.toThrow('No weaker move was played');
     client.dispose();
   }, 40_000);
+
+  it('lets a progressing Extreme search finish beyond 45 seconds at full strength', async () => {
+    install();
+    vi.useFakeTimers();
+    FakeWorker.mute = true;
+    const game = new QuadroGame(31);
+    const client = new AiClient({ level: 'extreme', seed: 1 });
+    const pending = client.choose(game.state, game.state.current);
+    const worker = FakeWorker.last!;
+    const id = worker.requests[0].id;
+    for (let steps = 100; steps <= 300; steps += 100) {
+      await vi.advanceTimersByTimeAsync(30_000);
+      worker.emit({ id, progress: true, steps });
+      expect(worker.terminated).toBe(false);
+    }
+    const actionId = legalActions(game.state)[0].actionId;
+    worker.emit({ id, ok: true, actionId, elapsedMs: 90_000, capped: false });
+    expect((await pending).action.actionId).toBe(actionId);
+    client.dispose();
+  });
+
+  it('does not let repeated progress counts hide a stalled search', async () => {
+    install();
+    vi.useFakeTimers();
+    FakeWorker.mute = true;
+    const game = new QuadroGame(31);
+    const client = new AiClient({ level: 'extreme' });
+    const pending = client.choose(game.state, game.state.current);
+    const rejected = expect(pending).rejects.toThrow('No weaker move was played');
+    const worker = FakeWorker.last!;
+    const progress = { id: worker.requests[0].id, progress: true as const, steps: 100 };
+    worker.emit(progress);
+    await vi.advanceTimersByTimeAsync(30_000);
+    worker.emit(progress);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await rejected;
+    expect(worker.terminated).toBe(true);
+    client.dispose();
+  });
 });

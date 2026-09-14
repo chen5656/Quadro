@@ -3,8 +3,8 @@
  *
  * The worker chunk is imported lazily so it is fetched before the first AI turn
  * rather than on page load (NFR-002). If the worker cannot be created, or a
- * request fails, the client falls back to searching on the main thread and says
- * so — the game always completes (AC-037), it just gets less responsive.
+ * request fails, other levels can fall back to main-thread search. Extreme
+ * requires a worker and its full workload; a failed search produces an error.
  *
  * The search itself is imported lazily on *both* paths. A static `makeAgent`
  * put every level — MCTS, the alpha-beta ladder and the evaluator behind them —
@@ -17,7 +17,7 @@ import { Action, type GameState, legalActions } from '../engine';
 import type { Agent, AgentLevel } from '../ai/base';
 import { AI_MAIN_THREAD_CAP_MS } from '../ai/budget';
 import type { AgentBudget } from '../ai/registry';
-import type { AiRequest, AiResponse } from '../workers/ai.worker';
+import type { AiRequest, AiResponse, AiWorkerMessage } from '../workers/ai.worker';
 
 export interface AiSpec {
   level: AgentLevel;
@@ -52,12 +52,12 @@ export interface AiMove {
 }
 
 /**
- * How long to wait for a worker reply before treating the worker as dead.
- *
- * Comfortably past `AI_SAFETY_CAP_MS`, which is the longest any search is
- * allowed to take: the gap is for a badly contended machine, not for thinking.
+ * Maximum silence from a worker. Extreme renews this deadline only when its
+ * completed work increases, so a healthy full search may take much longer.
  */
 const WORKER_REPLY_TIMEOUT_MS = 45000;
+const SLOW_WARNING_KEY = 'azul:extreme-slow-warning:v1';
+const SLOW_WARNING_MS = 10000;
 
 const CALIBRATION_LOG_KEY = 'azul:mcts-calibration:v1';
 const CALIBRATION_FLAG_KEY = 'azul:mcts-calibration:on';
@@ -107,7 +107,21 @@ export class AiClient {
   /** Flips to 'main-thread' permanently once the worker has let us down. */
   mode: AiMode = 'worker';
 
-  constructor(private readonly spec: AiSpec) {}
+  constructor(private readonly spec: AiSpec, private readonly onSlow?: () => void) {}
+
+  private warnedSlow = false;
+
+  private warnIfSlow(): void {
+    if (this.spec.level !== 'extreme' || !this.onSlow || this.warnedSlow) return;
+    this.warnedSlow = true;
+    try {
+      if (localStorage.getItem(SLOW_WARNING_KEY) === '1') return;
+      localStorage.setItem(SLOW_WARNING_KEY, '1');
+    } catch {
+      // Storage can be blocked; still warn once for this client.
+    }
+    this.onSlow();
+  }
 
   /** Create the worker if we do not have one yet. Returns null if unavailable. */
   private ensureWorker(): Worker | null {
@@ -173,6 +187,9 @@ export class AiClient {
   }
 
   private async onMainThread(state: GameState, player: number): Promise<AiMove> {
+    if (this.spec.level === 'extreme') {
+      throw new Error('Extreme could not finish its search. Restart or choose another AI. No weaker move was played.');
+    }
     if (!this.fallbackAgent) {
       const { makeAgent } = await import('../ai/registry');
       // A shorter stop-loss here than in the worker: this search freezes the
@@ -230,7 +247,7 @@ export class AiClient {
     return `${player}:${JSON.stringify(state.toDict(true))}`;
   }
 
-  /** Ask for a move. Never rejects for worker reasons — it falls back instead. */
+  /** Ask for a move. Extreme reports worker failure instead of reducing strength. */
   async choose(state: GameState, player: number, speculative = false): Promise<AiMove> {
     if (!speculative && this.speculative) {
       const pending = this.speculative;
@@ -247,7 +264,7 @@ export class AiClient {
       // call inside the worker, so the worker never reaches its message queue
       // until it is done. Letting it run costs a full core for as long as the
       // level's budget takes (`extreme` spends over a million engine steps in a
-      // late round, enough to reach its own thirty-second stop-loss),
+      // late round),
       // and because the worker answers serially the real question would queue
       // up *behind* the answer nobody wants. Killing the worker is the only
       // thing that actually stops it; a fresh one costs a few milliseconds and
@@ -268,8 +285,18 @@ export class AiClient {
 
     try {
       const response = await new Promise<AiResponse>((resolve, reject) => {
-        const onMessage = (event: MessageEvent<AiResponse>) => {
+        const slowTimer = setTimeout(() => this.warnIfSlow(), SLOW_WARNING_MS);
+        let lastSteps = 0;
+        const onMessage = (event: MessageEvent<AiWorkerMessage>) => {
           if (event.data.id !== id) return;
+          if ('progress' in event.data) {
+            if (this.spec.level === 'extreme' && Number.isFinite(event.data.steps) && event.data.steps > lastSteps) {
+              lastSteps = event.data.steps;
+              clearTimeout(timer);
+              timer = setTimeout(onTimeout, WORKER_REPLY_TIMEOUT_MS);
+            }
+            return;
+          }
           cleanup();
           resolve(event.data);
         };
@@ -277,23 +304,14 @@ export class AiClient {
           cleanup();
           reject(new Error('the AI worker failed'));
         };
-        /*
-          The backstop for a worker that goes quiet without failing.
-
-          Every search answers: the agents bound themselves with
-          `AI_SAFETY_CAP_MS` and return their best move so far. So a reply that
-          has not arrived well after that deadline does not mean "still
-          thinking", it means the worker is gone — reclaimed under memory
-          pressure, or a message lost — and those do not always fire `error`.
-          Without this the promise simply never settles: the session sits on
-          `ai-thinking` forever, with undo disabled because the AI is supposedly
-          mid-move, and the only way out is reloading the page.
-        */
-        const timer = setTimeout(() => {
+        // Progress renews the Extreme watchdog; silence eventually rejects.
+        const onTimeout = () => {
           cleanup();
           reject(new Error('the AI worker stopped answering'));
-        }, WORKER_REPLY_TIMEOUT_MS);
+        };
+        let timer = setTimeout(onTimeout, WORKER_REPLY_TIMEOUT_MS);
         const cleanup = () => {
+          clearTimeout(slowTimer);
           clearTimeout(timer);
           this.pending.delete(id);
           worker.removeEventListener('message', onMessage);
@@ -309,6 +327,10 @@ export class AiClient {
       });
 
       if (!response.ok) throw new Error(response.error);
+      if (this.spec.level === 'extreme' && response.capped) {
+        throw new Error('Extreme returned an incomplete search');
+      }
+      if (response.elapsedMs >= SLOW_WARNING_MS) this.warnIfSlow();
       this.initialized = true;
       const move: AiMove = {
         action: Action.fromId(response.actionId),
@@ -323,7 +345,7 @@ export class AiClient {
       return move;
     } catch (err) {
       if (err instanceof AiDisposed) throw err; // the caller is going away
-      // A worker that dies mid-game hands the rest of the game to this thread.
+      // Extreme's main-thread path rejects; other levels retain their fallback.
       this.demote();
       return this.onMainThread(state, player);
     }
@@ -334,11 +356,8 @@ export class AiClient {
    *
    * Every other level is sized so that even a device several times slower than
    * the bench machine finishes in full, so this firing for one of them means the
-   * player is quietly facing a weaker opponent than the level promises. For
-   * `extreme` in a late round it is expected rather than exceptional — the work
-   * budget there is more than the stop-loss buys on any hardware measured (see
-   * `src/ai/budget.ts`) — and the message names the mode, because the fallback
-   * path caps far shorter than the worker and will trip it far sooner.
+   * player is quietly facing a weaker opponent than the level promises.
+   * Extreme rejects capped replies instead of accepting a weaker opponent.
    */
   private warnIfCapped(move: AiMove): void {
     if (!move.capped || this.warnedCapped) return;

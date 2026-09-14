@@ -19,7 +19,7 @@ export interface Agent {
    * Pick one legal action for `player` in `state`.
    * Implementations must not leave `state` mutated: clone it, or use undo.
    */
-  choose(state: GameState, player: number): Action;
+  choose(state: GameState, player: number, onProgress?: (steps: number) => void): Action;
 }
 
 /**
