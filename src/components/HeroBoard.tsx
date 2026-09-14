@@ -261,6 +261,7 @@ export function HeroBoard({
   const [wall, setWall] = useState<boolean[][]>(seededWall);
   const [score, setScore] = useState(OPENING_SCORE);
   const [target, setTarget] = useState<{ row: number; col: number; color: number } | null>(null);
+  const resumeRef = useRef<(() => void) | null>(null);
 
   // Pause both token flights and score effects without resetting the preview.
   useEffect(() => {
@@ -269,6 +270,7 @@ export function HeroBoard({
       if (paused) animation.pause();
       else if (animation.playState === 'paused') animation.play();
     }
+    if (!paused) resumeRef.current?.();
   }, [paused]);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
@@ -298,7 +300,10 @@ export function HeroBoard({
     const inFlight = new Set<HTMLElement>();
     const scoreAnimations = new Set<Animation>();
     const waitWhilePaused = async () => {
-      while (pausedRef.current && !cancelled) await sleep(100);
+      while (pausedRef.current && !cancelled) {
+        await new Promise<void>((resolve) => { resumeRef.current = resolve; });
+        resumeRef.current = null;
+      }
     };
 
     const el = (id: string) => rootRef.current?.querySelector<HTMLElement>(`[data-hero-id="${id}"]`) ?? null;
@@ -497,6 +502,7 @@ export function HeroBoard({
       }
 
       const removeFlights = await Promise.all(flights);
+      await waitWhilePaused();
       if (cancelled) return;
 
       for (const l of landings) {
@@ -562,6 +568,7 @@ export function HeroBoard({
           const spare = Array.from({ length: row }, (_, i) => `stage-${row}-${i + 1}`);
           const flight = flyTo(color, `stage-${row}-0`, `wall-${row}-${col}`, SETTLE_MS);
           const [removeFlight] = await Promise.all([flight, fadeOut(spare)]);
+          await waitWhilePaused();
           if (cancelled) return;
           stage[row] = { color: -1, filled: 0 };
           grid[row][col] = true;
@@ -601,6 +608,7 @@ export function HeroBoard({
     run();
     return () => {
       cancelled = true;
+      resumeRef.current?.();
       for (const animation of scoreAnimations) animation.cancel();
       for (const node of inFlight) node.remove();
     };

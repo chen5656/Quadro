@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HeroBoard, type HeroStep } from '../components/HeroBoard';
 import { ShareSite } from '../components/ShareSite';
 import { SITE_NAME } from '../site';
@@ -24,8 +24,22 @@ const openingDemoStep: HeroStep = {
 };
 
 export function Home() {
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(() => document.hidden);
   const [demoStep, setDemoStep] = useState<HeroStep>(openingDemoStep);
+
+  // A short demonstration is useful; an unattended animation loop is not.
+  // Returning to the tab leaves it parked until the visitor presses Resume.
+  useEffect(() => {
+    const hide = () => { if (document.hidden) setPaused(true); };
+    document.addEventListener('visibilitychange', hide);
+    return () => document.removeEventListener('visibilitychange', hide);
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = window.setTimeout(() => setPaused(true), 30_000);
+    return () => window.clearTimeout(timer);
+  }, [paused]);
 
   return (
     <div className="home-page">
