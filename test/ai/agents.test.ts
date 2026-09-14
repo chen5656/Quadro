@@ -163,6 +163,23 @@ describe('search budgets (FR-009)', () => {
     const second = new MctsAgent({ seed: 5, simulations: 40 }).choose(game.state, 0);
     expect(second.actionId).toBe(first.actionId);
   });
+
+  it('solves a small round end instead of hiding its tactics in future-deal noise', () => {
+    // 2026-09-14 Daily, round 1: [blue, yellow, white, white] remains on D4
+    // and [green, green] is in the center. Taking green loses the known
+    // round-end exchange; a full-width search chooses yellow from D4.
+    const game = new QuadroGame(715021199, 0);
+    for (const id of [43, 91, 158, 6, 88, 164, 178]) {
+      game.step(Action.fromId(id));
+    }
+
+    const before = JSON.stringify(game.state.toDict(true));
+    const action = new MctsAgent({ seed: 2, stepBudget: 110000 }).choose(game.state, 1);
+
+    expect(action.source).toBe(4);
+    expect([1, 4]).toContain(action.color);
+    expect(JSON.stringify(game.state.toDict(true))).toBe(before);
+  });
 });
 
 describe('determinism', () => {

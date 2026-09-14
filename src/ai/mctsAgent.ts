@@ -26,6 +26,10 @@ import { extremeSteps } from './budget';
 import { now } from './clock';
 import { DEFAULT_WEIGHTS, type Weights, evaluate } from './evaluate';
 import { actionValue } from './greedyAgent';
+import { MinimaxAgent } from './minimaxAgent';
+
+/** At this size, a full-width search can solve the rest of the round cheaply. */
+export const EXACT_ROUND_TILE_LIMIT = 6;
 
 /**
  * Evaluation units are roughly "points"; this squashes a plausible swing into
@@ -293,6 +297,25 @@ export class MctsAgent implements Agent {
     const actions = legalActions(state);
     if (!actions.length) throw new AgentError('no legal action available');
     if (actions.length === 1) return actions[0];
+
+    // UCT can wash out a forced round-end tactic with the noise from future
+    // deals. Once only a few tiles remain, solve the known part of the game
+    // exactly. This also keeps Extreme from missing tactics Master can see.
+    const remainingTiles =
+      state.center.reduce((sum, count) => sum + count, 0) +
+      state.displays.reduce(
+        (sum, display) => sum + display.reduce((n, count) => n + count, 0),
+        0,
+      );
+    if (remainingTiles <= EXACT_ROUND_TILE_LIMIT) {
+      return new MinimaxAgent(
+        this.rng.nextInt(2 ** 31),
+        remainingTiles,
+        this.safetyCapMs,
+        this.weights,
+        'extreme',
+      ).choose(state, player);
+    }
 
     this.rootPlayer = player;
     const root = new Node(player);
