@@ -9,7 +9,7 @@ The game runs **100% client-side**, using Web Workers for AI computation, with a
 > [!NOTE]
 > **Extreme AI Model & Tuning Notice**
 > 
-> While the open-source `extreme` AI level is already formidably strong, advanced fine-tuning, hyperparameter optimization, and heuristic adjustments for `extreme` are kept in a private repository.
+> While the open-source `extreme` AI level is already strong, advanced fine-tuning, hyperparameter optimization, and heuristic adjustments for `extreme` are kept in a private repository.
 > 
 > 🏆 **To experience the most powerful, fully-tuned Extreme AI version, visit the web app at [acgame.win](https://acgame.win)**
 
