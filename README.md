@@ -6,6 +6,13 @@ The game runs **100% client-side**, using Web Workers for AI computation, with a
 
 **▶ Play it now: [acgame.win](https://acgame.win)**
 
+> [!NOTE]
+> **Extreme AI Model & Tuning Notice**
+> 
+> While the open-source `extreme` AI level is already formidably strong, advanced fine-tuning, hyperparameter optimization, and heuristic adjustments for `extreme` are kept in a private repository.
+> 
+> 🏆 **To experience the most powerful, fully-tuned Extreme AI version, visit the web app at [acgame.win](https://acgame.win)**
+
 ---
 
 ## Features
@@ -31,7 +38,7 @@ Six levels share one zero-sum heuristic evaluation function (`src/ai/evaluate.ts
 | `hard` | Alpha-beta, depth 3 | 30–150 ms | Two of its own moves deep. Plans short denial sequences rather than single-move trades. |
 | `expert` | Alpha-beta, depth 4 | 50–300 ms | Exploits the deterministic nature of an active round with move ordering and iterative deepening. Actively denies needed colors and forces floor penalties. |
 | `master` | Alpha-beta, depth 5, width 8 | 30–450 ms | Trades width for a fifth ply: searches only the eight best-ordered moves per node, which is the only way the extra depth finishes inside the budget. |
-| `extreme` | Open-loop determinized UCT | ~450 ms | Simulates future rounds via stochastic determinization. Thousands of rollouts plan cross-round combos and robust endgame scoring. |
+| `extreme` | Open-loop determinized UCT | ~450 ms | Simulates future rounds via stochastic determinization. Thousands of rollouts plan cross-round combos and robust endgame scoring. *(Note: The fully-tuned edition is live on [acgame.win](https://acgame.win))* |
 
 ### The ladder is measured, not assumed
 
