@@ -33,7 +33,7 @@ export default defineConfig({
             urlPattern: /^\/audio\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'nodra-audio',
+              cacheName: 'quadro-audio',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 90 },
               cacheableResponse: { statuses: [0, 200] },
             },

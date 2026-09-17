@@ -1,0 +1,61 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "quadro-api",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-28",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 }
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "quadro",
+      // From `npx wrangler d1 create quadro`. Never commit a real ID here —
+      // this file is an example; your copy lives in `wrangler.jsonc` (gitignored).
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+    }
+  ],
+
+  // The API shares the hostname with the Pages site; a Worker route takes
+  // precedence over Pages for the paths it matches, so /api/* lands here and
+  // everything else is served as the SPA.
+  //
+  // Replace `your-domain.com` with your own domain, or delete the whole
+  // `routes` block to serve the Worker from `workers.dev` instead (then set
+  // ALLOWED_ORIGIN below to your Pages URL).
+  //
+  // The `www` route matches the whole host, not just `/api/*`, because
+  // nothing on `www` should be served at all: the Worker answers every
+  // request there with a 308 back to the apex. Without it, `www` is a full
+  // second copy of the app whose `/api/*` calls never reach a Worker.
+  //
+  // `/r/*` is served by the Worker rather than Pages so a shared replay's
+  // link preview can carry that game's score (worker/share.ts). It fetches
+  // the SPA shell from `/index.html`, which Pages still owns.
+  "routes": [
+    { "pattern": "your-domain.com/api/*", "zone_name": "your-domain.com" },
+    { "pattern": "your-domain.com/r/*", "zone_name": "your-domain.com" },
+    { "pattern": "www.your-domain.com/*", "zone_name": "your-domain.com" }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "quadro-avatars"
+    }
+  ],
+
+  // ~midnight New York year-round; deletes rows older than 90 days (BR-014).
+  "triggers": { "crons": ["0 5 * * *"] },
+
+  "vars": {
+    // Public, non-secret configuration. BETTER_AUTH_SECRET is a Worker
+    // secret (`npx wrangler secret put BETTER_AUTH_SECRET`) and never
+    // appears here (NFR-010).
+    "ALLOWED_ORIGIN": "https://your-domain.com"
+  }
+}

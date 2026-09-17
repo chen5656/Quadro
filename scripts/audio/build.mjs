@@ -32,7 +32,7 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const outDir = join(root, 'public', 'audio');
-const tmpDir = join(root, 'node_modules', '.cache', 'nodra-audio');
+const tmpDir = join(root, 'node_modules', '.cache', 'quadro-audio');
 
 // ---- one-shots -------------------------------------------------------
 

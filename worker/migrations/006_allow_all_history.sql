@@ -1,7 +1,7 @@
 -- Removes the UNIQUE (puzzle_id, user_id, ai_level) constraint so all attempts are preserved.
 --
 -- Run with:
---   npx wrangler d1 execute nodra --remote --file worker/migrations/006_allow_all_history.sql
+--   npx wrangler d1 execute quadro --remote --file worker/migrations/006_allow_all_history.sql
 
 CREATE TABLE IF NOT EXISTS scores_new (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

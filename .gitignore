@@ -24,4 +24,7 @@ backend/zero/weights/*.npz
 backend/tests/test_game.py
 .wrangler/
 .dev.vars.example
+# Real deploy config holds a D1 database_id and production domains.
+# Forks copy wrangler.jsonc.example instead; never commit the real one.
+wrangler.jsonc
 AuthKey_97R8FVDKSP.p8
