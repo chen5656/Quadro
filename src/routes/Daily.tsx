@@ -11,7 +11,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { useMusic } from '../audio';
-import { useIdentity } from '../auth';
 import { Board } from '../components/Board';
 import { GameResultCard } from '../components/GameResultCard';
 import { FocusResultPanel } from '../components/FocusResultPanel';
@@ -31,7 +30,6 @@ import {
 import { setAttemptRunning } from '../game/attemptGuard';
 import { useGameSession } from '../game/useGameSession';
 import { useSubmission } from '../game/useSubmission';
-import type { SubmissionState } from '../game/useSubmission';
 import { useRouter } from '../router';
 import { storage } from '../storage';
 
@@ -122,8 +120,7 @@ function DailyAttempt({
   level: AgentLevel;
   onSelectLevel: (level: AgentLevel) => void;
 }) {
-  const identity = useIdentity();
-  const submission = useSubmission(identity);
+  const submission = useSubmission();
   const { navigate } = useRouter();
   const [showSettings, setShowSettings] = useState(false);
   const { style } = useGameStyle();
@@ -236,7 +233,6 @@ function DailyAttempt({
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4 w-full">
-      {session.status !== 'game-over' && <RecoveredSubmissionNotice state={submission.state} />}
       {session.status !== 'game-over' && !isRanked(level) && (
         <UnrankedBanner level={level} onSwitchToRanked={() => onSelectLevel(RANKED_LEVEL)} />
       )}
@@ -276,7 +272,6 @@ function DailyAttempt({
           onSwitchToRanked={() => onSelectLevel(RANKED_LEVEL)}
           onRetrySubmit={() => void submission.retry()}
           onDiscardSubmit={submission.discard}
-          onOpenSignIn={identity.openSignIn}
         />
       )}
 
@@ -302,27 +297,6 @@ function DailyAttempt({
         description={`Select the opponent difficulty for the Daily Challenge.`}
       />
     </div>
-  );
-}
-
-/**
- * A score recovered after a sign-in redirect belongs to a game this page no
- * longer has on screen, so `SubmitPanel` never renders for it. Without a line
- * of its own the post would happen silently and look exactly like the bug it
- * fixes.
- */
-function RecoveredSubmissionNotice({ state }: { state: SubmissionState }) {
-  let text: string | null = null;
-  if (state.kind === 'submitting') text = 'Saving the score you played before signing in…';
-  else if (state.kind === 'posted' || state.kind === 'not-improved')
-    text = `Your earlier score was recorded to your history.`;
-  else if (state.kind === 'failed') text = state.message;
-  if (!text) return null;
-
-  return (
-    <p className="rounded-xl border border-sky-800 bg-sky-950/30 p-3 text-sm text-neutral-300">
-      {text}
-    </p>
   );
 }
 

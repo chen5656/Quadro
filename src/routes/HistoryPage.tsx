@@ -1,5 +1,5 @@
 /**
- * `/history` — every Daily the signed-in player has posted.
+ * `/history` — every Daily posted from this browser's guest session.
  *
  * `scores` already keeps one row per (day, opponent), so this is a read of
  * rows that always existed rather than a new kind of record. Rows posted by a
@@ -12,7 +12,6 @@ import { LEVEL_LABELS, type AgentLevel } from '../ai/base';
 import { ApiError, type HistoryEntry, getHistory } from '../api/client';
 import { RobotAvatar } from '../components/RobotAvatar';
 import { TrophyIcon } from '../components/TrophyIcon';
-import { useIdentity } from '../auth';
 import { useGameStyle } from '../context/GameStyleContext';
 import { decodeReplay } from '../replay/codec';
 import { ENGINE_VERSION } from '../replay/version';
@@ -20,7 +19,7 @@ import { ShareButton } from '../components/ShareButton';
 import { formatDuration, recapText, replayHref, replayWallGridEmoji } from '../replay/share';
 import { Link } from '../router';
 
-type Load = 'loading' | 'ready' | 'signed-out' | 'error';
+type Load = 'loading' | 'ready' | 'error';
 
 /** Compare two history entries to find which is a better performance */
 function isBetterEntry(a: HistoryEntry, b: HistoryEntry): boolean {
@@ -47,7 +46,6 @@ function isBetterEntry(a: HistoryEntry, b: HistoryEntry): boolean {
 }
 
 export function HistoryPage() {
-  const identity = useIdentity();
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [state, setState] = useState<Load>('loading');
@@ -56,10 +54,6 @@ export function HistoryPage() {
 
   const fetchPage = useCallback(
     async (before: string | null, append: boolean) => {
-      if (!identity.signedIn) {
-        setState(identity.ready ? 'signed-out' : 'loading');
-        return;
-      }
       try {
         const page = await getHistory({ before });
         setEntries((prev) => (append ? [...prev, ...page.entries] : page.entries));
@@ -70,7 +64,7 @@ export function HistoryPage() {
         setState('error');
       }
     },
-    [identity.signedIn, identity.ready],
+    [],
   );
 
   useEffect(() => {
@@ -89,29 +83,12 @@ export function HistoryPage() {
     return map;
   }, [entries]);
 
-  if (state === 'signed-out') {
-    return (
-      <div className="mx-auto max-w-2xl py-10 text-center">
-        <h1 className="mb-2 text-xl font-semibold">Your history</h1>
-        <p className="mb-4 text-sm text-neutral-400">
-          Sign in to see the Dailies you have played — and to rewatch them.
-        </p>
-        <button
-          type="button"
-          onClick={identity.openSignIn}
-          className="inline-block rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
-        >
-          Sign in
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-semibold">Your history</h1>
       <p className="mb-4 text-sm text-neutral-500">
-        All your completed Daily attempts. Your highest score each day is awarded the daily trophy.
+        Your recorded Daily attempts from this browser. Clearing cookies, an expired session,
+        or switching browsers starts a new history. Your best score each day earns the daily trophy.
       </p>
 
       {state === 'loading' && <p className="text-sm text-neutral-400">Loading…</p>}

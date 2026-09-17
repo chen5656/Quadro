@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
-import { useIdentity } from '../auth';
 import { useGameStyle } from '../context/GameStyleContext';
 import { COLOR_NAMES, NUM_COLORS } from '../engine';
 import type { Session } from '../game/useGameSession';
@@ -63,8 +62,7 @@ export function Board({
    */
   onChangeLevel?: () => void;
 }) {
-  const identity = useIdentity();
-  const playerDisplayName = humanLabel !== 'You' ? humanLabel : (identity.displayName || 'You');
+  const playerDisplayName = humanLabel;
   const root = useRef<HTMLDivElement>(null);
   const { clearSelection, displayState, humanSeat, game, status } = session;
   const triggerUndo = onUndo ?? session.undo;

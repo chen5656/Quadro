@@ -5,8 +5,8 @@
  * rather than throwing past the runtime, so a bug never becomes an opaque 1101.
  */
 
-import { enabledProviders, getAuth, requireSession, verifyRequest } from './auth';
-import { deleteAvatars, serveAvatar, uploadAvatar } from './avatar';
+import { guestSession, requireOrigin, requireSession, verifyRequest } from './auth';
+import { deleteAvatars } from './avatar';
 import { purgeOldRows } from './cron';
 import { currentPuzzleId, isPuzzleId, nextRolloverMs, seedForPuzzle } from './daily';
 import { HttpError, corsHeaders, fail, json } from './http';
@@ -138,21 +138,8 @@ async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
 
-  // Sign-in, sign-out, OAuth callbacks, session, and profile updates. Handed
-  // over whole: better-auth owns every route under its base path, and the list
-  // grows with the plugins it is configured with.
-  if (url.pathname.startsWith('/api/auth/')) {
-    return (await getAuth(env)).handler(request);
-  }
-
-  // Which sign-in buttons to render. A provider whose credentials are not set
-  // must not show a button: the redirect would dead-end in a 500.
-  if (path === '/api/providers' && request.method === 'GET') {
-    return json({ social: enabledProviders(env), email_password: true });
-  }
-
-  if (path.startsWith('/api/avatar/') && request.method === 'GET') {
-    return serveAvatar(env, path.slice('/api/avatar/'.length));
+  if (path === '/api/guest' && (request.method === 'GET' || request.method === 'POST')) {
+    return guestSession(request, env);
   }
   if (path === '/api/daily' && request.method === 'GET') {
     const puzzleId = currentPuzzleId();
@@ -186,6 +173,7 @@ async function route(request: Request, env: Env): Promise<Response> {
   }
 
   if (path === '/api/scores' && request.method === 'POST') {
+    requireOrigin(request, env);
     const session = await requireSession(request, env);
     const body = await request.json().catch(() => null);
     return submitScore(env.DB, session, body);
@@ -206,19 +194,8 @@ async function route(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  if (path === '/api/me/avatar' && request.method === 'PUT') {
-    const session = await requireSession(request, env);
-    return uploadAvatar(env, session, request, async (image) => {
-      // Written through better-auth so its hooks and the cached session cookie
-      // both see the new value.
-      await (await getAuth(env)).api.updateUser({
-        body: { image },
-        headers: request.headers,
-      });
-    });
-  }
-
   if (path === '/api/me' && request.method === 'DELETE') {
+    requireOrigin(request, env);
     const session = await requireSession(request, env);
     await deleteAvatars(env, session.userId).catch(() => {});
     return deleteMe(env.DB, session);

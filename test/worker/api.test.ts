@@ -16,7 +16,7 @@ import {
   call,
   migrate,
   signInAnonymously,
-  signUp,
+  createGuest,
 } from './helpers';
 
 const TODAY = currentPuzzleId();
@@ -71,7 +71,7 @@ describe('POST /api/scores', () => {
   });
 
   it('accepts a win and reports rank 1 on an empty board', async () => {
-    const session = await signUp('ada');
+    const session = await createGuest('ada');
     const response = await post(WIN, session);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
@@ -82,21 +82,21 @@ describe('POST /api/scores', () => {
   });
 
   it('accepts a post from an anonymous session', async () => {
-    const session = await signInAnonymously();
+    const session = await createGuest();
     const response = await post(WIN, session);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ accepted: true, rank: 1 });
   });
 
   it("rejects yesterday's puzzle with 409 (AC-021)", async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await post({ ...WIN, puzzle_id: '2020-01-01' }, session);
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ error: { code: 'STALE_PUZZLE' } });
   });
 
   it('rejects an implausible time and audits the rejection (AC-022)', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await post({ ...WIN, elapsed_ms: 5000 }, session);
     expect(response.status).toBe(422);
     expect(await response.json()).toMatchObject({ error: { code: 'IMPLAUSIBLE_TIME' } });
@@ -108,33 +108,33 @@ describe('POST /api/scores', () => {
   });
 
   it('rejects an attempt against a retired, unranked level', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await post({ ...WIN, ai_level: 'medium' }, session);
     expect(response.status).toBe(422);
     expect(await response.json()).toMatchObject({ error: { code: 'UNRANKED_LEVEL' } });
   });
 
   it.each(['master', 'expert'])('accepts an attempt against %s', async (aiLevel) => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await post({ ...WIN, ai_level: aiLevel }, session);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ accepted: true });
   });
 
   it('rejects a time above the upper bound', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     expect((await post({ ...WIN, elapsed_ms: 7_200_001 }, session)).status).toBe(422);
   });
 
   it('accepts a submission with a tie or loss (negative score margin)', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await post({ ...WIN, final_score: 40, opponent_score: 45 }, session);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ accepted: true, rank: 1 });
   });
 
   it('rejects a malformed payload and audits it', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await post({ puzzle_id: 'nope' }, session);
     expect(response.status).toBe(422);
     const audit = await env.DB.prepare('SELECT reason FROM submissions_audit').first<{ reason: string }>();
@@ -142,7 +142,7 @@ describe('POST /api/scores', () => {
   });
 
   it('saves every attempt in scores and returns improvement against previous best (AC-018, AC-019)', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await post(WIN, session); // 64 - 51 = 13 diff
 
     // Smaller diff (10 diff) even if faster elapsed time is not improved
@@ -171,7 +171,7 @@ describe('POST /api/scores', () => {
   });
 
   it('tracks attempt counts across multiple attempts including worse games', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     // 1st attempt (loss / worse score)
     const first = await post({ ...WIN, attempts: 1, final_score: 40, opponent_score: 50 }, session);
     expect(await first.json()).toMatchObject({ accepted: true, attempts: 1 });
@@ -196,7 +196,7 @@ describe('POST /api/scores', () => {
   });
 
   it('rate-limits the 61st submission in an hour (AC-024)', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const now = Date.now();
     // Fill the audit trail directly; the limit counts submissions, accepted or not.
     for (let i = 0; i < RATE_LIMIT_PER_HOUR; i += 1) {
@@ -252,7 +252,7 @@ describe('GET /api/leaderboard', () => {
   it('reports a true rank outside the top of the board (AC-026)', async () => {
     const rows: [string, string, number, number, number, number][] = [];
     for (let i = 0; i < 111; i += 1) rows.push([`user_${i}`, `p${i}`, 100_000 + i, 80, 50, 1000 + i]);
-    const session = await signUp('ada');
+    const session = await createGuest('ada');
     rows.push([session.userId, 'ada', 900_000, 55, 50, 5000]); // diff = +5 vs +30 of others
     await seed(rows);
 
@@ -275,7 +275,7 @@ describe('GET /api/leaderboard', () => {
 
 describe('DELETE /api/me', () => {
   it('removes every row for the user and returns the counts (AC-029)', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await post(WIN, session);
 
     const response = await call(apiRequest('/api/me', { method: 'DELETE', session }));
@@ -288,7 +288,7 @@ describe('DELETE /api/me', () => {
   });
 
   it('deletes the account itself, sessions and linked providers included', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await post(WIN, session);
 
     expect((await call(apiRequest('/api/me', { method: 'DELETE', session }))).status).toBe(200);

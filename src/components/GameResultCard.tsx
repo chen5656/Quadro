@@ -68,7 +68,6 @@ export interface GameResultCardProps {
   onSwitchToRanked?: () => void;
   onRetrySubmit?: () => void;
   onDiscardSubmit?: () => void;
-  onOpenSignIn?: () => void;
 }
 
 /** When each beat of the reveal fires, in ms after the card mounts. */
@@ -114,7 +113,6 @@ export function GameResultCard({
   backLabel = 'Back to Home',
   onSwitchToRanked,
   onRetrySubmit,
-  onOpenSignIn,
 }: GameResultCardProps) {
   const { style } = useGameStyle();
   const reduced = usePrefersReducedMotion();
@@ -493,18 +491,6 @@ export function GameResultCard({
               <span className="text-neutral-200">
                 🎉 Match recorded to your <Link to="/history" className="font-semibold text-sky-400 underline hover:text-sky-300">history</Link>!
               </span>
-            )}
-            {submissionState?.kind === 'awaiting-auth' && (
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <span>Sign in to save your score to history:</span>
-                <button
-                  type="button"
-                  onClick={onOpenSignIn}
-                  className="rounded bg-sky-600 px-2.5 py-0.5 font-semibold text-white hover:bg-sky-500"
-                >
-                  Sign in
-                </button>
-              </div>
             )}
             {submissionState?.kind === 'failed' && (
               <div className="flex flex-wrap items-center justify-center gap-2 text-rose-300">

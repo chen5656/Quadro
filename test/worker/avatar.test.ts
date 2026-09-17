@@ -9,7 +9,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { apiRequest, call, migrate, signUp } from './helpers';
+import { apiRequest, call, migrate, createGuest } from './helpers';
 
 /** The smallest valid PNG: a 1x1 transparent pixel. */
 const PNG = Uint8Array.from(
@@ -23,7 +23,7 @@ beforeEach(async () => {
   await migrate();
 });
 
-function put(body: BodyInit, contentType: string, session?: Awaited<ReturnType<typeof signUp>>) {
+function put(body: BodyInit, contentType: string, session?: Awaited<ReturnType<typeof createGuest>>) {
   return call(
     apiRequest('/api/me/avatar', {
       method: 'PUT',
@@ -40,7 +40,7 @@ describe('PUT /api/me/avatar', () => {
   });
 
   it('stores the image and points the user row at it', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await put(PNG, 'image/png', session);
     expect(response.status).toBe(200);
 
@@ -54,7 +54,7 @@ describe('PUT /api/me/avatar', () => {
   });
 
   it('serves the stored image back', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const { image_url: url } = await (await put(PNG, 'image/png', session)).json<{
       image_url: string;
     }>();
@@ -66,20 +66,20 @@ describe('PUT /api/me/avatar', () => {
   });
 
   it('refuses a type a browser would not render as an image', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await put('<svg/>', 'image/svg+xml', session);
     expect(response.status).toBe(415);
     expect(await response.json()).toMatchObject({ error: { code: 'UNSUPPORTED_MEDIA' } });
   });
 
   it('refuses an image over the size cap', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     const response = await put(new Uint8Array(1_048_577), 'image/png', session);
     expect(response.status).toBe(413);
   });
 
   it('leaves only the newest image in the bucket', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await put(PNG, 'image/png', session);
     const second = await (await put(PNG, 'image/webp', session)).json<{ image_url: string }>();
 
@@ -96,7 +96,7 @@ describe('PUT /api/me/avatar', () => {
 
 describe('DELETE /api/me', () => {
   it('takes the uploaded avatars with it', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await put(PNG, 'image/png', session);
 
     await call(apiRequest('/api/me', { method: 'DELETE', session }));

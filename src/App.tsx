@@ -3,7 +3,6 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { AppBanners } from './components/AppBanners';
 import { SettingsMenu } from './components/SettingsMenu';
 import { useAttemptRunning } from './game/attemptGuard';
-import { AuthControl } from './auth';
 import { Home } from './routes/Home';
 import { Link, useRouter } from './router';
 import { ShareSite } from './components/ShareSite';
@@ -145,7 +144,6 @@ export function App() {
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Nav />
             <SettingsMenu />
-            <AuthControl />
           </div>
         </div>
       </header>

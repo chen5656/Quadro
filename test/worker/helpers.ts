@@ -1,11 +1,9 @@
 /**
- * Test rig for the Worker: a real local D1 with the production schema, and
- * sessions minted the way the app mints them.
+ * Test rig for the Worker: a real local D1 with the production schema.
  *
- * There is no token to forge any more. A test that needs an authenticated
- * caller signs one up through the Worker's own `/api/auth/*` endpoints and
- * reuses the session cookie that comes back — so the auth path under test is
- * the same one production runs, cookie signing and all.
+ * There are no accounts to sign into. A test that needs a session creates a
+ * browser guest through the Worker's own `POST /api/guest` and reuses the
+ * cookie that comes back, exactly as the app does.
  */
 
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
@@ -44,58 +42,35 @@ export interface TestSession {
   /** Ready to send as a `cookie` header. */
   cookie: string;
   userId: string;
+  /** The `player-xxxxxx` name the Worker derives from the id. */
+  displayName: string;
 }
-
-let seq = 0;
 
 /**
- * Signs a fresh player up with email and password and returns their session.
- * `nickname` is what the leaderboard will show.
+ * Starts a guest session and returns its cookie. Idempotent per cookie jar, so
+ * a second call with the returned cookie keeps the same identity.
  */
-export async function signUp(nickname = 'ada'): Promise<TestSession> {
-  seq += 1;
-  const email = `player${seq}@test.example`;
-
+export async function createGuest(): Promise<TestSession> {
   const response = await call(
-    new Request(`${ORIGIN}/api/auth/sign-up/email`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', origin: ORIGIN },
-      body: JSON.stringify({ email, password: 'correct-horse-battery', name: nickname, nickname }),
-    }),
-  );
-  if (!response.ok) {
-    throw new Error(`sign-up failed: ${response.status} ${await response.text()}`);
-  }
-
-  const cookie = sessionCookie(response);
-  const row = await env.DB.prepare('SELECT id FROM "user" WHERE email = ?')
-    .bind(email)
-    .first<{ id: string }>();
-  if (!row) throw new Error('sign-up left no user row');
-
-  return { cookie, userId: row.id };
-}
-
-/** Signs in anonymously — the tap-to-play path. */
-export async function signInAnonymously(): Promise<TestSession> {
-  const response = await call(
-    new Request(`${ORIGIN}/api/auth/sign-in/anonymous`, {
+    new Request(`${ORIGIN}/api/guest`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', origin: ORIGIN },
       body: '{}',
     }),
   );
   if (!response.ok) {
-    throw new Error(`anonymous sign-in failed: ${response.status} ${await response.text()}`);
+    throw new Error(`guest session failed: ${response.status} ${await response.text()}`);
   }
 
   const cookie = sessionCookie(response);
+  const body = await response.json<{ displayName: string }>();
+
   const row = await env.DB.prepare(
     'SELECT id FROM "user" WHERE "isAnonymous" = 1 ORDER BY rowid DESC',
   ).first<{ id: string }>();
-  if (!row) throw new Error('anonymous sign-in left no user row');
+  if (!row) throw new Error('guest session left no user row');
 
-  return { cookie, userId: row.id };
+  return { cookie, userId: row.id, displayName: body.displayName };
 }
 
 /** Every `Set-Cookie` on the response, folded into one `Cookie` header value. */
@@ -116,6 +91,7 @@ export function apiRequest(
     ...rest,
     headers: {
       ...(rest.body ? { 'content-type': 'application/json' } : {}),
+      ...(rest.body !== undefined ? { origin: ORIGIN } : {}),
       ...(session ? { cookie: session.cookie } : {}),
       ...rest.headers,
     },

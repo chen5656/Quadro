@@ -5,8 +5,8 @@
  * fail: play never depends on it, and offline is a state, not an error
  * (FR-037).
  *
- * Authentication is the session cookie better-auth sets, so there is no token
- * to thread through: `credentials: 'include'` is the whole of it.
+ * Personal scores and history use an automatic, private browser guest cookie.
+ * Gameplay and the public leaderboard never require a session.
  */
 
 export const CLIENT_VERSION = '1.0.0';
@@ -153,8 +153,38 @@ export function getLeaderboard(puzzleId: string, aiLevel: string): Promise<Leade
   );
 }
 
+/** Share initialization across concurrent score/history requests (and StrictMode). */
+let guestPending: Promise<void> | null = null;
+export function ensureGuest(): Promise<void> {
+  if (!guestPending) {
+    guestPending = (async () => {
+      try {
+        await request('/guest');
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 401) throw error;
+        await request('/guest', { method: 'POST' });
+        // Confirm cookies were accepted; do not silently create endless guests.
+        await request('/guest');
+      }
+    })().finally(() => { guestPending = null; });
+  }
+  return guestPending;
+}
+
+async function guestRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  await ensureGuest();
+  try {
+    return await request<T>(path, init);
+  } catch (error) {
+    // Recover a cookie that expired between initialization and this request.
+    if (!(error instanceof ApiError) || error.status !== 401) throw error;
+    await ensureGuest();
+    return request<T>(path, init);
+  }
+}
+
 export function postScore(submission: ScoreSubmission): Promise<ScoreResult> {
-  return request<ScoreResult>('/scores', {
+  return guestRequest<ScoreResult>('/scores', {
     method: 'POST',
     body: JSON.stringify(submission),
   });
@@ -167,7 +197,7 @@ export function getHistory(
   if (options.before) params.set('before', options.before);
   if (options.limit) params.set('limit', String(options.limit));
   const query = params.toString();
-  return request<HistoryPage>(`/me/history${query ? `?${query}` : ''}`);
+  return guestRequest<HistoryPage>(`/me/history${query ? `?${query}` : ''}`);
 }
 
 export function deleteMe(): Promise<{ deleted_scores: number; deleted_audit: number }> {

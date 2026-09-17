@@ -15,7 +15,7 @@ import { GreedyAgent } from '../../src/ai';
 import { QuadroGame } from '../../src/engine';
 import { encodeReplay } from '../../src/replay/codec';
 import { ENGINE_VERSION } from '../../src/replay/version';
-import { apiRequest, call, migrate, signUp } from './helpers';
+import { apiRequest, call, migrate, createGuest } from './helpers';
 
 const TODAY = currentPuzzleId();
 const HUMAN_SEAT = 0;
@@ -60,7 +60,7 @@ beforeEach(async () => {
 describe('POST /api/scores with a replay', () => {
   it('accepts a genuine replay and marks the row verified', async () => {
     const { replay, submission } = playToday();
-    const session = await signUp();
+    const session = await createGuest();
     const response = await call(
       apiRequest('/api/scores', {
         method: 'POST',
@@ -82,7 +82,7 @@ describe('POST /api/scores with a replay', () => {
 
   it('refuses a score the replay does not produce', async () => {
     const { replay, submission } = playToday();
-    const session = await signUp();
+    const session = await createGuest();
     const response = await call(
       apiRequest('/api/scores', {
         method: 'POST',
@@ -101,7 +101,7 @@ describe('POST /api/scores with a replay', () => {
 
   it('refuses a corrupted replay', async () => {
     const { submission } = playToday();
-    const session = await signUp();
+    const session = await createGuest();
     const response = await call(
       apiRequest('/api/scores', {
         method: 'POST',
@@ -114,7 +114,7 @@ describe('POST /api/scores with a replay', () => {
 
   it('still accepts a submission with no replay, unverified', async () => {
     const { submission } = playToday();
-    const session = await signUp();
+    const session = await createGuest();
     const response = await call(
       apiRequest('/api/scores', { method: 'POST', session, body: JSON.stringify(submission) }),
     );
@@ -149,7 +149,7 @@ describe('GET /api/me/history', () => {
   });
 
   it('returns only the caller’s own rows, newest day first', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await seed(session.userId, [
       { day: '2026-01-01', level: 'extreme', score: 40 },
       { day: '2026-01-03', level: 'extreme', score: 55 },
@@ -176,7 +176,7 @@ describe('GET /api/me/history', () => {
   });
 
   it('pages with a cursor', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     await seed(
       session.userId,
       ['2026-02-01', '2026-02-02', '2026-02-03'].map((day) => ({
@@ -200,7 +200,7 @@ describe('GET /api/me/history', () => {
   });
 
   it('rejects a malformed cursor', async () => {
-    const session = await signUp();
+    const session = await createGuest();
     expect((await call(apiRequest('/api/me/history?before=nope', { session }))).status).toBe(422);
   });
 });

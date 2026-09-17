@@ -1,49 +1,37 @@
 /**
- * Which origins may talk to `/api/auth/*`.
+ * Which origins may talk to the guest session endpoint.
  *
- * better-auth validates the `Origin` header of every non-GET request against
- * `trustedOrigins`, and Apple's callback is a cross-site POST — so this list
- * being wrong shows up as either a broken Apple sign-in or an open redirect,
- * and never as a test failure elsewhere. Asserted on the config directly:
- * better-auth skips the origin check outright under NODE_ENV=test, so driving
- * a request through the handler here would prove nothing.
+ * `POST /api/guest` mints a session cookie, so a cross-site page must not be
+ * able to create one on a player's behalf. Asserted on the handler directly:
+ * it is the only place the check lives.
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { authOptions } from '../../worker/auth/options';
+import { requireOrigin } from '../../worker/auth';
+import { HttpError } from '../../worker/http';
 
 const ORIGIN = 'https://acgame.win';
+const env = { ALLOWED_ORIGIN: ORIGIN } as unknown as Env;
 
-/** The resolver as better-auth calls it: with a request, or with none at init. */
-function resolve(url?: string): string[] {
-  const trusted = authOptions({ ALLOWED_ORIGIN: ORIGIN }).trustedOrigins;
-  if (typeof trusted !== 'function') throw new Error('expected the per-request form');
-  return trusted(url ? new Request(url, { method: 'POST' }) : (undefined as never)) as string[];
+function postFrom(origin?: string): void {
+  const request = new Request(`${ORIGIN}/api/guest`, {
+    method: 'POST',
+    headers: origin ? { origin } : {},
+  });
+  requireOrigin(request, env);
 }
 
-describe('trusted origins', () => {
-  it('trusts Apple on the callback it posts to', () => {
-    expect(resolve(`${ORIGIN}/api/auth/callback/apple`)).toEqual([
-      ORIGIN,
-      'https://appleid.apple.com',
-    ]);
+describe('guest session origin check', () => {
+  it('accepts the app origin', () => {
+    expect(() => postFrom(ORIGIN)).not.toThrow();
   });
 
-  it('trusts nobody but the app everywhere else', () => {
-    expect(resolve(`${ORIGIN}/api/auth/callback/google`)).toEqual([ORIGIN]);
-    expect(resolve(`${ORIGIN}/api/auth/sign-in/social`)).toEqual([ORIGIN]);
-    expect(resolve(`${ORIGIN}/api/auth/delete-user`)).toEqual([ORIGIN]);
+  it('rejects a cross-site origin', () => {
+    expect(() => postFrom('https://evil.example')).toThrow(HttpError);
   });
 
-  it('keeps Apple out of the list that redirect targets are checked against', () => {
-    // Resolved with no request at init — this is what `callbackURL`,
-    // `redirectTo` and `newUserCallbackURL` are validated against.
-    expect(resolve()).toEqual([ORIGIN]);
-  });
-
-  it('does not match a path that merely mentions the callback', () => {
-    expect(resolve(`${ORIGIN}/api/auth/callback/apple/../evil`)).toEqual([ORIGIN]);
-    expect(resolve(`${ORIGIN}/api/auth/callback/applesauce`)).toEqual([ORIGIN]);
+  it('rejects a missing origin', () => {
+    expect(() => postFrom()).toThrow(HttpError);
   });
 });
